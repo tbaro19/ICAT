@@ -1,4 +1,4 @@
-# Attacking Vision-Language Models with Quality-Diversity Algorithms
+# Quality-Diversity Optimization for Diverse Black-box Attacks on Image Captioning Models
 
 Adversarial attack framework for Vision-Language Models (BLIP-2, PaliGemma, Moondream2) using Quality-Diversity optimization to find diverse perturbations that degrade caption quality.
 
