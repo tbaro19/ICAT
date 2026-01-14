@@ -1,0 +1,49 @@
+# Core Deep Learning and Vision-Language Models
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+open_clip_torch>=2.20.0
+timm>=0.9.0
+
+# Quality-Diversity Algorithm Framework
+# Note: pyribs is installed locally from /root/ICAT/pyribs as editable package
+# Install with: cd /root/ICAT/pyribs && pip install -e .
+# ribs[all]>=0.6.0  # Using local version instead
+numpy>=1.24.0
+scipy>=1.10.0
+numba>=0.51.0
+numpy_groupies>=0.9.16
+sortedcontainers>=2.0.0
+array_api_compat
+shapely  # Required for ribs visualization
+
+# Image Processing
+Pillow>=9.5.0
+opencv-python>=4.7.0
+scikit-image>=0.21.0
+
+# NLP and Evaluation Metrics
+bert-score>=0.3.13
+sentence-transformers>=2.2.0
+sacrebleu>=2.3.1
+nltk>=3.8.1
+
+# Vietnamese NLP Support
+underthesea>=1.3.4
+pyvi>=0.1.1
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.14.0
+
+# Utilities
+tqdm>=4.65.0
+pandas>=2.0.0
+pyyaml>=6.0
+wandb>=0.15.0
+tensorboard>=2.13.0
+
+# Development
+jupyter>=1.0.0
+ipython>=8.12.0

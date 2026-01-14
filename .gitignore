@@ -1,0 +1,65 @@
+# Data folders
+data/
+
+# Pyribs local folder
+pyribs/
+
+# Results
+results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Logs
+logs/
+*.log
+
+# Miniconda
+miniconda3/
+Miniconda3-latest-Linux-x86_64.sh
+
+# Temporary files
+*.tmp
+*.bak
+.DS_Store
+
+# Checkpoints
+*.pkl
+*.pth
+*.ckpt
