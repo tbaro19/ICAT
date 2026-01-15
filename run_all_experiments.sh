@@ -19,7 +19,7 @@
 # Parse command line arguments
 ITERATIONS=${1:-1000}
 EXP_NAME=${2:-"main_run"}
-QD_ALGO=${3:-"cma_me"}
+QD_ALGO=${3:-"cma_me"} #'map_elites', 'cma_me', 'cma_mae', 'cma_mega'
 USE_UNIFIED=${4:-"yes"}
 USE_LOGIT_LOSS=${5:-"yes"}
 

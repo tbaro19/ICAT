@@ -71,13 +71,13 @@ def parse_args():
                        help='Initial step size for evolution strategies')
     
     # Archive arguments
-    parser.add_argument('--grid_dims', type=int, nargs=2, default=[12, 12],
+    parser.add_argument('--grid_dims', type=int, nargs=2, default=[10, 10],
                        help='Dimensions of MAP-Elites grid')
     parser.add_argument('--bc_types', type=str, nargs=2, 
                        default=['linf_norm', 'spectral_energy'],
                        help='Types of behavior characteristics')
     parser.add_argument('--bc_ranges', type=float, nargs=4,
-                       default=[0.07, 0.20, 0.10, 0.18],
+                       default=[0.07, 0.13, 0.10, 0.18],
                        help='🔒 LOCKED Ranges for behavior characteristics [min1, max1, min2, max2] for consistent measurement across 1000 iterations')
     
     # Output arguments
@@ -97,7 +97,7 @@ def parse_args():
                        help='Use Unified Adaptive Adversarial Framework')
     parser.add_argument('--use_logit_loss', action='store_true',
                        help='Use logit-based fitness (cross-entropy loss) instead of similarity')
-    parser.add_argument('--initial_epsilon', type=float, default=0.05,
+    parser.add_argument('--initial_epsilon', type=float, default=0.07,
                        help='Initial epsilon for adaptive scheduler')
     
     return parser.parse_args()
