@@ -43,7 +43,7 @@ def create_emitters(archive,
                 GaussianEmitter(
                     archive,
                     x0=kwargs.get('x0', np.zeros(archive.solution_dim)),
-                    sigma0=sigma0,
+                    sigma=sigma0,
                     batch_size=kwargs.get('batch_size', 36)
                 )
             )
