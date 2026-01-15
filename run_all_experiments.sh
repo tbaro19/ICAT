@@ -19,17 +19,19 @@
 # Parse command line arguments
 ITERATIONS=${1:-1000}
 EXP_NAME=${2:-"main_run"}
-QD_ALGO=${3:-"cma_me"} #'map_elites', 'cma_me', 'cma_mae', 'cma_mega'
-USE_UNIFIED=${4:-"yes"}
-USE_LOGIT_LOSS=${5:-"yes"}
+USE_UNIFIED=${3:-"yes"}
+USE_LOGIT_LOSS=${4:-"yes"}
+
+# All QD algorithms to run
+ALGORITHMS=("map_elites" "cma_me" "cma_mae" "cma_mega")
 
 echo "========================================"
-echo "Running All Model x Dataset Experiments"
+echo "Running All Model x Dataset x Algorithm Experiments"
 echo "========================================"
 echo "Configuration:"
 echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
-echo "  - QD Algorithm: ${QD_ALGO}"
+echo "  - QD Algorithms: map_elites, cma_me, cma_mae, cma_mega"
 echo "  - Use Unified Framework: ${USE_UNIFIED}"
 echo "  - Use Logit-Loss Fitness: ${USE_LOGIT_LOSS}"
 echo "=========================================="
@@ -58,15 +60,25 @@ MODEL_PALIGEMMA="google/paligemma-3b-pt-224"
 MODEL_MOONDREAM2="vikhyatk/moondream2"
 
 # Datasets
-DATASETS=("ktvic" "uit-viic" "flickr30k")
+DATASETS=("uit-viic")
 
 # Track progress
-TOTAL_EXPERIMENTS=$((3 * ${#DATASETS[@]}))
+TOTAL_EXPERIMENTS=$((3 * ${#DATASETS[@]} * ${#ALGORITHMS[@]}))
 CURRENT=0
 
 echo "Total experiments to run: ${TOTAL_EXPERIMENTS}"
+echo "Algorithms: ${ALGORITHMS[@]}"
 echo "Models: BLIP-2, PaliGemma, Moondream2"
+echo "Datasets: ${DATASETS[@]}"
 echo ""
+
+# Loop through all algorithms
+for QD_ALGO in "${ALGORITHMS[@]}"; do
+    echo ""
+    echo "=========================================="
+    echo "Starting Algorithm: ${QD_ALGO}"
+    echo "=========================================="
+    echo ""
 
 # Run BLIP-2 experiments
 echo "========== BLIP-2 Experiments =========="
@@ -144,6 +156,13 @@ for dataset in "${DATASETS[@]}"; do
         echo "✗ Failed: Moondream2 on ${dataset}"
     fi
 done
+
+echo ""
+echo "========================================"
+echo "Completed Algorithm: ${QD_ALGO}"
+echo "=========================================="
+
+done  # End algorithm loop
 
 echo ""
 echo "========================================"
