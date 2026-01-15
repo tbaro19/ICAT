@@ -245,7 +245,7 @@ class UnifiedAttackManager:
         print(f"{self.scheduler.get_status_string()}")
         
         # Visual Stealth stats
-        vs_stats = self.archive.get_stealth_statistics()
+        vs_stats = self.archive.get_stats()
         print(f"\nVisual Stealth Archive:")
         print(f"  Fitness Improvements: {vs_stats['fitness_improvements']}")
         print(f"  Stealth Improvements: {vs_stats['stealth_improvements']}")
@@ -275,10 +275,10 @@ class UnifiedAttackManager:
         scheduler_stats = self.scheduler.get_statistics()
         
         # Visual stealth stats
-        stealth_stats = self.archive.get_stealth_statistics()
+        stealth_stats = self.archive.get_stats()
         
         # Archive coverage
-        max_possible = self.archive.bins[0] * self.archive.bins[1]
+        max_possible = self.archive.grid_dims[0] * self.archive.grid_dims[1]
         coverage = len(self.archive) / max_possible
         
         return {
@@ -351,10 +351,10 @@ class UnifiedAttackManager:
             vlm_model=self.vlm_model,
             original_caption=self.original_caption,
             groundtruth_caption=self.groundtruth_caption,
-            output_dir=output_dir,
-            top_k=top_k,
+            save_dir=str(output_dir),
+            num_elites=top_k,
             fitness_weight=fitness_weight,
-            verbose=self.verbose
+            generate_captions=True
         )
         
         if self.verbose:

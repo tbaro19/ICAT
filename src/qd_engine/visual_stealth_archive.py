@@ -145,7 +145,8 @@ class VisualStealthArchive:
             'fitness_improvements': self.replacement_stats['fitness_improvements'],
             'stealth_improvements': self.replacement_stats['stealth_improvements'],
             'new_cells': self.replacement_stats['new_cells'],
-            'rejections': self.replacement_stats['rejections']
+            'rejections': self.replacement_stats['rejections'],
+            'rejection_rate': self.replacement_stats['rejections'] / max(1, self.replacement_stats['total_adds'])
         })
         
         return base_stats
@@ -224,3 +225,37 @@ class VisualStealthArchive:
     def __len__(self):
         """Return number of elites in archive"""
         return len(self.archive)
+    
+    def as_pandas(self, include_solutions=False):
+        """Return archive data as pandas DataFrame"""
+        import pandas as pd
+        
+        data = self.archive.data()
+        if len(data['objective']) == 0:
+            return pd.DataFrame()
+        
+        df_data = {
+            'objective': data['objective'],
+        }
+        
+        # Add index columns
+        indices = data['index']
+        if indices.ndim == 1:
+            df_data['index_0'] = indices
+        else:
+            for i in range(indices.shape[1]):
+                df_data[f'index_{i}'] = indices[:, i]
+        
+        # Add measures as separate columns
+        for i in range(data['measures'].shape[1]):
+            df_data[f'measure_{i}'] = data['measures'][:, i]
+        
+        if include_solutions:
+            # Add solutions as a list column
+            df_data['solution'] = [sol for sol in data['solution']]
+        
+        return pd.DataFrame(df_data)
+    
+    def __iter__(self):
+        """Iterate over elites in archive"""
+        return iter(self.archive)
