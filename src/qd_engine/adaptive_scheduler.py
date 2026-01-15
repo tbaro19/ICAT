@@ -220,8 +220,15 @@ class AdaptiveScheduler:
             for emitter in self.scheduler.emitters:
                 if hasattr(emitter, 'sigma0'):
                     emitter.sigma0 = new_sigma
+                elif hasattr(emitter, '_sigma'):
+                    # New pyribs API: sigma is read-only property, use _sigma
+                    emitter._sigma = new_sigma
                 elif hasattr(emitter, 'sigma'):
-                    emitter.sigma = new_sigma
+                    # Fallback for older API or other emitter types
+                    try:
+                        emitter.sigma = new_sigma
+                    except AttributeError:
+                        pass
         elif hasattr(self.scheduler, 'sigma'):
             self.scheduler.sigma = new_sigma
     
