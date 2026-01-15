@@ -20,7 +20,7 @@ class AdaptiveScheduler:
         bc_ranges: List[Tuple[float, float]],
         grid_dims: Tuple[int, int],
         initial_epsilon: float = 0.05,
-        max_epsilon: float = 0.20,
+        max_epsilon: float = 0.15,
         epsilon_creep: float = 0.01,
         sigma_burst_multiplier: float = 1.5,
         max_sigma: float = 0.10,
