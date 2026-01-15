@@ -23,7 +23,7 @@ USE_UNIFIED=${3:-"yes"}
 USE_LOGIT_LOSS=${4:-"yes"}
 
 # All QD algorithms to run
-ALGORITHMS=("map_elites" "cma_me" "cma_mae" "cma_mega")
+ALGORITHMS=("map_elites" "cma_me" "cma_mae")
 
 echo "========================================"
 echo "Running All Model x Dataset x Algorithm Experiments"
@@ -31,7 +31,7 @@ echo "========================================"
 echo "Configuration:"
 echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
-echo "  - QD Algorithms: map_elites, cma_me, cma_mae, cma_mega"
+echo "  - QD Algorithms: map_elites, cma_me, cma_mae"
 echo "  - Use Unified Framework: ${USE_UNIFIED}"
 echo "  - Use Logit-Loss Fitness: ${USE_LOGIT_LOSS}"
 echo "=========================================="
