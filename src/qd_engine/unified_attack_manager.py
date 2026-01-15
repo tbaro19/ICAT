@@ -113,6 +113,12 @@ class UnifiedAttackManager:
         self.iteration_count = 0
         self.total_evaluations = 0
         
+        # History tracking for visualizations
+        self.qd_score_history = []
+        self.coverage_history = []
+        self.max_fitness_history = []
+        self.mean_fitness_history = []
+        
         if self.verbose:
             print("\n" + "="*60)
             print("🎯 Unified Attack Manager Initialized")
@@ -186,7 +192,14 @@ class UnifiedAttackManager:
         self.iteration_count += 1
         self.total_evaluations += len(solutions)
         
-        # 6. Build iteration stats
+        # 6. Track history for visualizations
+        archive_stats = self.archive.get_stats()
+        self.qd_score_history.append(archive_stats['qd_score'])
+        self.coverage_history.append(archive_stats['coverage'])
+        self.max_fitness_history.append(archive_stats['max_fitness'])
+        self.mean_fitness_history.append(archive_stats['mean_fitness'])
+        
+        # 7. Build iteration stats
         discovery_status = self.discovery_tracker.update(current_num_elites)
         stats = {
             'iteration': self.iteration_count,
@@ -367,6 +380,8 @@ class UnifiedAttackManager:
         Args:
             output_dir: Output directory path
         """
+        from src.utils.visualization import plot_heatmap, plot_training_curves, plot_adaptive_sigma_history
+        
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
         
@@ -387,6 +402,67 @@ class UnifiedAttackManager:
             **{k: v for k, v in final_stats.items() 
                if not isinstance(v, (dict, object))}
         )
+        
+        # Generate visualizations
+        if self.verbose:
+            print("\n📊 Generating visualizations...")
+        
+        # 1. Plot heatmap
+        heatmap_path = output_dir / 'final_heatmap.png'
+        try:
+            plot_heatmap(
+                self.archive,  # Pass wrapper - function accesses .archive internally
+                save_path=str(heatmap_path),
+                title=f'QD Archive Heatmap',
+                xlabel='BC1 (L∞ Norm)',
+                ylabel='BC2 (Spectral Energy)'
+            )
+            if self.verbose:
+                print(f"  ✓ Saved: final_heatmap.png")
+        except Exception as e:
+            print(f"  ✗ Failed to generate heatmap: {e}")
+        
+        # 2. Plot training curves
+        curves_path = output_dir / 'training_curves.png'
+        try:
+            # Get QD metrics history
+            history = {
+                'qd_score': self.qd_score_history,
+                'coverage': self.coverage_history,
+                'max_fitness': self.max_fitness_history,
+            }
+            plot_training_curves(
+                history,
+                save_path=str(curves_path),
+                title='QD Training Progress'
+            )
+            if self.verbose:
+                print(f"  ✓ Saved: training_curves.png")
+        except Exception as e:
+            print(f"  ✗ Failed to generate training curves: {e}")
+        
+        # 3. Plot adaptive scheduler history
+        adaptive_plot_path = output_dir / 'adaptive_sigma_plot.png'
+        try:
+            stats = self.scheduler.get_statistics()
+            # Build history dict compatible with plot_adaptive_sigma_history
+            adaptive_history = {
+                'iteration': list(range(1, len(stats['sigma_history']) + 1)),
+                'num_elites': [len(self.archive)] * len(stats['sigma_history']),  # Approximate
+                'sigma': stats['sigma_history'],
+                'epsilon': stats['epsilon_history'],
+                'stagnation_counter': [0] * len(stats['sigma_history']),  # Not tracked
+                'event': ['none'] * len(stats['sigma_history'])  # Simplified
+            }
+            plot_adaptive_sigma_history(
+                adaptive_history,
+                save_path=str(adaptive_plot_path),
+                title='Adaptive Sigma History'
+            )
+            if self.verbose:
+                print(f"  ✓ Saved: adaptive_sigma_plot.png")
+        except Exception as e:
+            print(f"  ✗ Failed to generate adaptive plot: {e}")
         
         if self.verbose:
             print(f"\n💾 Results saved to {output_dir}")
