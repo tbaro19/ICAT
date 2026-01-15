@@ -19,12 +19,12 @@ class AdaptiveScheduler:
         base_scheduler,
         bc_ranges: List[Tuple[float, float]],
         grid_dims: Tuple[int, int],
-        initial_epsilon: float = 0.05,
+        initial_epsilon: float = 0.07,
         max_epsilon: float = 0.15,
         epsilon_creep: float = 0.01,
         sigma_burst_multiplier: float = 1.5,
         max_sigma: float = 0.10,
-        min_sigma: float = 0.05,
+        min_sigma: float = 0.02,
         stagnation_window: int = 15,
         verbose: bool = True
     ):
