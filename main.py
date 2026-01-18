@@ -10,7 +10,7 @@ from tqdm import tqdm
 # Import project modules
 from src.models.blip2_wrapper import BLIP2Wrapper
 from src.models.paligemma_wrapper import PaliGemmaWrapper
-from src.models.moondream2_wrapper import Moondream2Wrapper
+from src.models.qwen2vl_wrapper import Qwen2VLWrapper
 from src.qd_engine import QDArchive, QDScheduler, create_emitters
 from src.qd_engine.adaptive_attack_scheduler import AdaptiveAttackScheduler
 from src.qd_engine.visual_stealth_archive import VisualStealthArchive
@@ -33,7 +33,7 @@ def parse_args():
     
     # Model arguments
     parser.add_argument('--model', type=str, default='blip2', 
-                       choices=['blip2', 'paligemma', 'moondream2'],
+                       choices=['blip2', 'paligemma', 'qwen2vl'],
                        help='VLM model to attack')
     parser.add_argument('--model_name', type=str, default='Salesforce/blip2-opt-2.7b',
                        help='Specific model architecture (HuggingFace model ID)')
@@ -147,8 +147,8 @@ def main():
             model_name=args.model_name,
             device=device
         )
-    elif args.model == 'moondream2':
-        vlm_model = Moondream2Wrapper(
+    elif args.model == 'qwen2vl':
+        vlm_model = Qwen2VLWrapper(
             model_name=args.model_name,
             device=device
         )
