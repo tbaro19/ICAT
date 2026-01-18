@@ -516,8 +516,8 @@ def main():
                 emitter_fitness = fitness_scores[emitter_start:emitter_end]
                 emitter_bcs = behavioral_chars[emitter_start:emitter_end]
                 
-                # tell() requires: objective, measures, add_info for pyribs
-                emitter.tell(emitter_fitness, emitter_bcs, {})
+                # tell() requires: solutions, objective, measures, add_info for pyribs
+                emitter.tell(emitter_solutions, emitter_fitness, emitter_bcs, {})
             
             emitter_start = emitter_end
         
