@@ -381,7 +381,7 @@ def main():
     print("="*70)
     
     fitness_fn = JailbreakLogitFitness(
-        model_name=model_name,
+        model_name=args.model_name,
         device=device,
         chunk_size=1,  # VLMs are memory-intensive
         verbose=True
