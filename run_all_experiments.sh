@@ -3,56 +3,37 @@
 # Quality-Diversity Black-box Attacks on Vision-Language Models
 #
 # Usage:
-#   ./run_all_experiments.sh [iterations] [exp_name] [qd_algo] [use_unified] [use_logit_loss]
+#   ./run_all_experiments.sh [iterations] [exp_name]
 #
 # Examples:
-#   ./run_all_experiments.sh                                 # 1000 iterations, main_run, cma_me, no unified
-#   ./run_all_experiments.sh 50                              # 50 iterations, main_run, cma_me, no unified
-#   ./run_all_experiments.sh 500 baseline                    # 500 iterations, baseline, cma_me, no unified
-#   ./run_all_experiments.sh 500 baseline cma_mega           # 500 iterations, baseline, cma_mega, no unified
-#   ./run_all_experiments.sh 1000 unified_test cma_me yes    # 1000 iterations, unified framework (similarity)
-#   ./run_all_experiments.sh 1000 unified_full cma_me yes yes # 1000 iterations, unified + logit-loss
+#   ./run_all_experiments.sh                    # 1000 iterations, jailbreak_run
+#   ./run_all_experiments.sh 50                 # 50 iterations, jailbreak_run
+#   ./run_all_experiments.sh 500 baseline       # 500 iterations, baseline
+#   ./run_all_experiments.sh 1000 safety_test   # 1000 iterations, safety_test
 #
 # Note: Experiments run SEQUENTIALLY (not parallel) - one at a time
 #
 
 # Parse command line arguments
 ITERATIONS=${1:-1000}
-EXP_NAME=${2:-"main_run"}
-USE_UNIFIED=${3:-"yes"}
-USE_LOGIT_LOSS=${4:-"yes"}
+EXP_NAME=${2:-"jailbreak_run"}
 
 # All QD algorithms to run
 ALGORITHMS=("cma_me" "cma_mae" "cma_mega")
 
 echo "========================================"
-echo "Running All Model x Dataset x Algorithm Experiments"
+echo "🎯 Safety Red-Teaming Jailbreak Framework"
 echo "========================================"
 echo "Configuration:"
 echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
 echo "  - QD Algorithms: cma_me, cma_mae, cma_mega"
-echo "  - Use Unified Framework: ${USE_UNIFIED}"
-echo "  - Use Logit-Loss Fitness: ${USE_LOGIT_LOSS}"
+echo "  - Mode: Unified Adaptive Framework (Jailbreak)"
+echo "  - Fitness: Harmful Token Lexicon (Always Enabled)"
 echo "=========================================="
 
-# Build unified framework flags
-UNIFIED_FLAGS=""
-if [ "${USE_UNIFIED}" = "yes" ] || [ "${USE_UNIFIED}" = "y" ] || [ "${USE_UNIFIED}" = "true" ]; then
-    UNIFIED_FLAGS="--use_unified"
-    echo "🎯 Unified Adaptive Adversarial Framework: ENABLED"
-    
-    if [ "${USE_LOGIT_LOSS}" = "yes" ] || [ "${USE_LOGIT_LOSS}" = "y" ] || [ "${USE_LOGIT_LOSS}" = "true" ]; then
-        UNIFIED_FLAGS="${UNIFIED_FLAGS} --use_logit_loss"
-        echo "   - Fitness Mode: Logit-Loss (Cross-Entropy)"
-    else
-        echo "   - Fitness Mode: Similarity-Based (CLIP)"
-    fi
-else
-    echo "📊 Standard MAP-Elites System: ENABLED"
-    echo "   - Fitness Mode: Similarity-Based (CLIP)"
-fi
-echo "=========================================="
+# Always use unified framework with jailbreak fitness
+UNIFIED_FLAGS="--use_unified"
 
 # Model configurations (optimized for Tesla T4)
 MODEL_BLIP2="Salesforce/blip2-opt-2.7b"
