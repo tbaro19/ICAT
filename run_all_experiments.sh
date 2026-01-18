@@ -23,7 +23,7 @@ USE_UNIFIED=${3:-"yes"}
 USE_LOGIT_LOSS=${4:-"yes"}
 
 # All QD algorithms to run
-ALGORITHMS=("map_elites" "cma_me" "cma_mae")
+ALGORITHMS=("cma_me" "cma_mae" "cma_mega")
 
 echo "========================================"
 echo "Running All Model x Dataset x Algorithm Experiments"
@@ -31,7 +31,7 @@ echo "========================================"
 echo "Configuration:"
 echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
-echo "  - QD Algorithms: map_elites, cma_me, cma_mae"
+echo "  - QD Algorithms: cma_me, cma_mae, cma_mega"
 echo "  - Use Unified Framework: ${USE_UNIFIED}"
 echo "  - Use Logit-Loss Fitness: ${USE_LOGIT_LOSS}"
 echo "=========================================="
@@ -57,18 +57,18 @@ echo "=========================================="
 # Model configurations (optimized for Tesla T4)
 MODEL_BLIP2="Salesforce/blip2-opt-2.7b"
 MODEL_PALIGEMMA="google/paligemma-3b-pt-224"
-MODEL_MOONDREAM2="vikhyatk/moondream2"
+MODEL_QWEN2VL="Qwen/Qwen2-VL-2B-Instruct"
 
 # Datasets
 DATASETS=("uit-viic")
 
 # Track progress
-TOTAL_EXPERIMENTS=$((3 * ${#DATASETS[@]} * ${#ALGORITHMS[@]}))
+TOTAL_EXPERIMENTS=$((2 * ${#DATASETS[@]} * ${#ALGORITHMS[@]}))
 CURRENT=0
 
 echo "Total experiments to run: ${TOTAL_EXPERIMENTS}"
 echo "Algorithms: ${ALGORITHMS[@]}"
-echo "Models: BLIP-2, PaliGemma, Moondream2"
+echo "Models: BLIP-2, PaliGemma (Qwen2-VL ready)"
 echo "Datasets: ${DATASETS[@]}"
 echo ""
 
@@ -131,31 +131,31 @@ for dataset in "${DATASETS[@]}"; do
     fi
 done
 
-# Run Moondream2 experiments
-echo ""
-echo "========== Moondream2 Experiments =========="
-for dataset in "${DATASETS[@]}"; do
-    CURRENT=$((CURRENT + 1))
-    echo ""
-    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Moondream2 on ${dataset}..."
-    echo "Command: python main.py --model moondream2 --model_name ${MODEL_MOONDREAM2} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
-    
-    python main.py \
-        --model moondream2 \
-        --model_name "${MODEL_MOONDREAM2}" \
-        --dataset "${dataset}" \
-        --algorithm "${QD_ALGO}" \
-        --iterations ${ITERATIONS} \
-        --exp_name "${EXP_NAME}" \
-        ${UNIFIED_FLAGS}
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Successfully completed Moondream2 on ${dataset}"
-        echo "  Results saved to: results/${QD_ALGO}/moondream2_vikhyatk_moondream2/${dataset}/${EXP_NAME}/"
-    else
-        echo "✗ Failed: Moondream2 on ${dataset}"
-    fi
-done
+# Run Qwen2-VL experiments (OPTIONAL - uncomment to enable)
+# echo ""
+# echo "========== Qwen2-VL Experiments =========="
+# for dataset in "${DATASETS[@]}"; do
+#     CURRENT=$((CURRENT + 1))
+#     echo ""
+#     echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Qwen2-VL on ${dataset}..."
+#     echo "Command: python main.py --model qwen2vl --model_name ${MODEL_QWEN2VL} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
+#     
+#     python main.py \
+#         --model qwen2vl \
+#         --model_name "${MODEL_QWEN2VL}" \
+#         --dataset "${dataset}" \
+#         --algorithm "${QD_ALGO}" \
+#         --iterations ${ITERATIONS} \
+#         --exp_name "${EXP_NAME}" \
+#         ${UNIFIED_FLAGS}
+#     
+#     if [ $? -eq 0 ]; then
+#         echo "✓ Successfully completed Qwen2-VL on ${dataset}"
+#         echo "  Results saved to: results/${QD_ALGO}/qwen2vl_Qwen_Qwen2-VL-2B-Instruct/${dataset}/${EXP_NAME}/"
+#     else
+#         echo "✗ Failed: Qwen2-VL on ${dataset}"
+#     fi
+# done
 
 echo ""
 echo "========================================"

@@ -16,7 +16,7 @@ from src.qd_engine.adaptive_attack_scheduler import AdaptiveAttackScheduler
 from src.qd_engine.visual_stealth_archive import VisualStealthArchive
 from src.qd_engine.discovery_tracker import DiscoveryRateTracker
 from src.qd_engine.unified_attack_manager import UnifiedAttackManager
-from src.attack import PerturbationGenerator, FitnessFunction, MeasureFunction
+from src.attack import PerturbationGenerator, FitnessFunction, MeasureFunction, JailbreakLogitFitness
 from src.utils import plot_heatmap, plot_training_curves, visualize_perturbations
 from src.utils import DatasetLoader
 from src.utils import export_golden_elites
@@ -72,13 +72,13 @@ def parse_args():
     
     # Archive arguments
     parser.add_argument('--grid_dims', type=int, nargs=2, default=[10, 10],
-                       help='Dimensions of MAP-Elites grid')
+                       help='Dimensions of MAP-Elites grid (10x10 for fine-grained jailbreak diversity)')
     parser.add_argument('--bc_types', type=str, nargs=2, 
                        default=['linf_norm', 'spectral_energy'],
                        help='Types of behavior characteristics')
     parser.add_argument('--bc_ranges', type=float, nargs=4,
-                       default=[0.07, 0.13, 0.10, 0.18],
-                       help='🔒 LOCKED Ranges for behavior characteristics [min1, max1, min2, max2] for consistent measurement across 1000 iterations')
+                       default=[0.05, 0.10, 0.10, 0.18],
+                       help='🔒 Safety Red-Team Ranges: L-inf [0.05, 0.10], Spectral [0.10, 0.18] for stealthy jailbreak triggers')
     
     # Output arguments
     parser.add_argument('--output_dir', type=str, default='/root/ICAT/results',
@@ -97,6 +97,8 @@ def parse_args():
                        help='Use Unified Adaptive Adversarial Framework')
     parser.add_argument('--use_logit_loss', action='store_true',
                        help='Use logit-based fitness (cross-entropy loss) instead of similarity')
+    parser.add_argument('--use_jailbreak', action='store_true',
+                       help='🎯 Enable Jailbreak Mode: Use harmful token lexicon for safety red-teaming')
     parser.add_argument('--initial_epsilon', type=float, default=0.07,
                        help='Initial epsilon for adaptive scheduler')
     
@@ -374,12 +376,28 @@ def main():
         target_size=target_size  # Upsample to this size before applying
     )
     
-    # Initialize fitness function with chunked processing
-    fitness_fn = FitnessFunction(
-        metric='clip_similarity',
-        device=device,
-        chunk_size=4  # Process 4 images at a time
-    )
+    # Initialize fitness function based on mode
+    if args.use_jailbreak:
+        print("\n🎯 JAILBREAK MODE ENABLED - Safety Red-Teaming")
+        print("="*70)
+        print("Fitness: Harmful Token Lexicon (Targeted Logit-Forcing)")
+        print("Objective: Maximize log-probability of prohibited tokens")
+        print("="*70)
+        
+        fitness_fn = JailbreakLogitFitness(
+            model_name=model_name,
+            device=device,
+            chunk_size=1,  # VLMs are memory-intensive
+            verbose=True
+        )
+        fitness_fn.lexicon.print_lexicon_summary()
+    else:
+        # Standard fitness function
+        fitness_fn = FitnessFunction(
+            metric='clip_similarity',
+            device=device,
+            chunk_size=4  # Process 4 images at a time
+        )
     
     # Initialize measure function
     measure_fn = MeasureFunction(
