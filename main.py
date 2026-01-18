@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 # Import project modules
 from src.models.blip2_wrapper import BLIP2Wrapper
-from src.models.deepseek_vl2_wrapper import DeepSeekVL2Wrapper
+from src.models.internvl2_wrapper import InternVL2Wrapper
 from src.models.qwen2vl_wrapper import Qwen2VLWrapper
 from src.qd_engine import QDArchive, QDScheduler, create_emitters
 from src.qd_engine.adaptive_attack_scheduler import AdaptiveAttackScheduler
@@ -33,7 +33,7 @@ def parse_args():
     
     # Model arguments
     parser.add_argument('--model', type=str, default='blip2', 
-                       choices=['blip2', 'deepseek', 'qwen2vl'],
+                       choices=['blip2', 'internvl', 'qwen2vl'],
                        help='VLM model to attack')
     parser.add_argument('--model_name', type=str, default='Salesforce/blip2-opt-2.7b',
                        help='Specific model architecture (HuggingFace model ID)')
@@ -142,8 +142,8 @@ def main():
             model_name=args.model_name,
             device=device
         )
-    elif args.model == 'deepseek':
-        vlm_model = DeepSeekVL2Wrapper(
+    elif args.model == 'internvl':
+        vlm_model = InternVL2Wrapper(
             model_name=args.model_name,
             device=device
         )

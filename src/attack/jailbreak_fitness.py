@@ -144,8 +144,8 @@ class JailbreakLogitFitness:
         
         if 'blip2' in model_type:
             return self._extract_blip2_logits(images, vlm_model)
-        elif 'deepseek' in model_type:
-            return self._extract_deepseek_logits(images, vlm_model)
+        elif 'internvl' in model_type:
+            return self._extract_internvl_logits(images, vlm_model)
         elif 'qwen2vl' in model_type or 'qwen' in model_type:
             return self._extract_qwen2vl_logits(images, vlm_model)
         else:
@@ -200,18 +200,18 @@ class JailbreakLogitFitness:
         
         return logits
     
-    def _extract_deepseek_logits(
+    def _extract_internvl_logits(
         self,
         images: torch.Tensor,
         vlm_model
     ) -> torch.Tensor:
-        """Extract logits from DeepSeek-VL2"""
+        """Extract logits from InternVL2"""
         from PIL import Image as PILImage
         
         batch_logits = []
         
         with torch.no_grad():
-            # Process each image individually (DeepSeek uses conversational format)
+            # Process each image individually
             for i in range(images.shape[0]):
                 img = images[i]  # [C, H, W]
                 
@@ -221,28 +221,8 @@ class JailbreakLogitFitness:
                 img_np = (img.cpu().numpy() * 255).astype(np.uint8)
                 pil_img = PILImage.fromarray(img_np)
                 
-                # Build conversation
-                conversation = [
-                    {
-                        "role": "User",
-                        "content": "<image>\nDescribe this image.",
-                        "images": [pil_img],
-                    },
-                    {"role": "Assistant", "content": ""},
-                ]
-                
-                # Prepare inputs
-                inputs = vlm_model.processor(
-                    conversation,
-                    images=[pil_img],
-                    return_tensors="pt"
-                ).to(vlm_model.device)
-                
-                # Forward pass
-                outputs = vlm_model.model(**inputs)
-                
-                # Get logits from last position
-                logits = outputs.logits[0, -1, :]  # [vocab_size]
+                # Use the extract_logits method from wrapper
+                logits = vlm_model.extract_logits(pil_img)
                 batch_logits.append(logits)
         
         # Stack batch

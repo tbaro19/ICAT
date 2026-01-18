@@ -37,7 +37,7 @@ UNIFIED_FLAGS="--use_unified"
 
 # Model configurations (optimized for Tesla T4)
 MODEL_BLIP2="Salesforce/blip2-opt-2.7b"
-MODEL_DEEPSEEK="deepseek-ai/deepseek-vl2-tiny"
+MODEL_INTERNVL="OpenGVLab/InternVL2-2B"
 MODEL_QWEN2VL="Qwen/Qwen2-VL-2B-Instruct"
 
 # Datasets
@@ -49,7 +49,7 @@ CURRENT=0
 
 echo "Total experiments to run: ${TOTAL_EXPERIMENTS}"
 echo "Algorithms: ${ALGORITHMS[@]}"
-echo "Models: BLIP-2, DeepSeek-VL2-Tiny (Qwen2-VL ready)"
+echo "Models: BLIP-2, InternVL2-2B (Qwen2-VL ready)"
 echo "Datasets: ${DATASETS[@]}"
 echo ""
 
@@ -86,18 +86,18 @@ for dataset in "${DATASETS[@]}"; do
     fi
 done
 
-# Run DeepSeek-VL2 experiments
+# Run InternVL2 experiments
 echo ""
-echo "========== DeepSeek-VL2-Tiny Experiments =========="
+echo "========== InternVL2-2B Experiments =========="
 for dataset in "${DATASETS[@]}"; do
     CURRENT=$((CURRENT + 1))
     echo ""
-    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running DeepSeek-VL2 on ${dataset}..."
-    echo "Command: python main.py --model deepseek --model_name ${MODEL_DEEPSEEK} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
+    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running InternVL2 on ${dataset}..."
+    echo "Command: python main.py --model internvl --model_name ${MODEL_INTERNVL} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
     
     python main.py \
-        --model deepseek \
-        --model_name "${MODEL_DEEPSEEK}" \
+        --model internvl \
+        --model_name "${MODEL_INTERNVL}" \
         --dataset "${dataset}" \
         --algorithm "${QD_ALGO}" \
         --iterations ${ITERATIONS} \
@@ -105,10 +105,10 @@ for dataset in "${DATASETS[@]}"; do
         ${UNIFIED_FLAGS}
     
     if [ $? -eq 0 ]; then
-        echo "✓ Successfully completed DeepSeek-VL2 on ${dataset}"
-        echo "  Results saved to: results/${QD_ALGO}/deepseek_deepseek-ai_deepseek-vl2-tiny/${dataset}/${EXP_NAME}/"
+        echo "✓ Successfully completed InternVL2 on ${dataset}"
+        echo "  Results saved to: results/${QD_ALGO}/internvl_OpenGVLab_InternVL2-2B/${dataset}/${EXP_NAME}/"
     else
-        echo "✗ Failed: DeepSeek-VL2 on ${dataset}"
+        echo "✗ Failed: InternVL2 on ${dataset}"
     fi
 done
 
@@ -163,7 +163,7 @@ echo "        ├── blip2_Salesforce_blip2-opt-2.7b/"
 echo "        │   ├── ktvic/${EXP_NAME}/"
 echo "        │   ├── uit-viic/${EXP_NAME}/"
 echo "        │   └── flickr30k/${EXP_NAME}/"
-echo "        ├── deepseek_deepseek-ai_deepseek-vl2-tiny/"
+echo "        ├── internvl_OpenGVLab_InternVL2-2B/"
 echo "        │   ├── ktvic/${EXP_NAME}/"
 echo "        │   ├── uit-viic/${EXP_NAME}/"
 echo "        │   └── flickr30k/${EXP_NAME}/"

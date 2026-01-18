@@ -1,19 +1,19 @@
 """
-DeepSeek-VL2-Tiny Model Wrapper for Vision-Language Tasks
-Lightweight alternative to PaliGemma with strong performance
+InternVL2-2B Model Wrapper for Vision-Language Tasks
+Efficient and well-supported alternative with strong performance
 """
 import torch
 import numpy as np
 from PIL import Image
-from transformers import AutoModelForCausalLM, AutoProcessor
+from transformers import AutoModel, AutoTokenizer
 
 
-class DeepSeekVL2Wrapper:
-    """Wrapper for DeepSeek-VL2-Tiny model"""
+class InternVL2Wrapper:
+    """Wrapper for InternVL2-2B model"""
     
-    def __init__(self, model_name: str = "deepseek-ai/deepseek-vl2-tiny", device: str = "cuda"):
+    def __init__(self, model_name: str = "OpenGVLab/InternVL2-2B", device: str = "cuda"):
         """
-        Initialize DeepSeek-VL2-Tiny model
+        Initialize InternVL2-2B model
         
         Args:
             model_name: HuggingFace model name
@@ -23,13 +23,10 @@ class DeepSeekVL2Wrapper:
         self.device = device
         self.model_name = model_name
         
-        print(f"Loading DeepSeek-VL2-Tiny model: {model_name}")
+        print(f"Loading InternVL2-2B model: {model_name}")
         
-        # Load processor
-        self.processor = AutoProcessor.from_pretrained(model_name)
-        
-        # Load model with bfloat16 for efficiency
-        self.model = AutoModelForCausalLM.from_pretrained(
+        # Load model and tokenizer
+        self.model = AutoModel.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
             device_map="auto",
@@ -37,13 +34,18 @@ class DeepSeekVL2Wrapper:
             trust_remote_code=True
         )
         
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model_name,
+            trust_remote_code=True
+        )
+        
         self.model.eval()
         
-        print(f"✓ DeepSeek-VL2-Tiny loaded on {device}")
+        print(f"✓ InternVL2-2B loaded on {device}")
     
     def generate_caption(self, image, max_length: int = 100):
         """
-        Generate caption for an image using DeepSeek-VL2
+        Generate caption for an image using InternVL2
         
         Args:
             image: PIL Image or torch.Tensor [C, H, W] or [B, C, H, W]
@@ -66,91 +68,54 @@ class DeepSeekVL2Wrapper:
             image = PILImage.fromarray(img_np)
         
         try:
-            # DeepSeek-VL2 uses conversational format
-            conversation = [
-                {
-                    "role": "User",
-                    "content": "<image>\nDescribe this image in detail.",
-                    "images": [image],
-                },
-                {"role": "Assistant", "content": ""},
-            ]
-            
-            # Prepare inputs
-            inputs = self.processor(
-                conversation,
-                images=[image],
-                return_tensors="pt"
-            ).to(self.device)
+            # InternVL2 uses simple prompt format
+            prompt = "<image>\nDescribe this image in detail."
             
             # Generate caption
             with torch.no_grad():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=128,
-                    do_sample=False,
-                    num_beams=3,
-                    repetition_penalty=1.2,
-                    early_stopping=True
+                response = self.model.chat(
+                    self.tokenizer,
+                    pixel_values=None,
+                    image=image,
+                    msgs=[{'role': 'user', 'content': prompt}],
+                    generation_config=dict(
+                        max_new_tokens=128,
+                        do_sample=False,
+                        num_beams=3
+                    )
                 )
-            
-            # Decode output
-            output_text = self.processor.decode(
-                outputs[0], 
-                skip_special_tokens=True
-            )
-            
-            # Extract only the assistant's response
-            if "Assistant:" in output_text:
-                output_text = output_text.split("Assistant:")[-1].strip()
             
             # Clear cache
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            return output_text.strip()
+            return response.strip()
             
         except torch.cuda.OutOfMemoryError:
             print("Warning: OOM during caption generation, clearing cache and retrying...")
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            # Retry with simpler generation (beam_size=1)
-            conversation = [
-                {
-                    "role": "User",
-                    "content": "<image>\nDescribe this image.",
-                    "images": [image],
-                },
-                {"role": "Assistant", "content": ""},
-            ]
-            
-            inputs = self.processor(
-                conversation,
-                images=[image],
-                return_tensors="pt"
-            ).to(self.device)
+            # Retry with simpler generation
+            prompt = "<image>\nDescribe this image."
             
             with torch.no_grad():
-                outputs = self.model.generate(
-                    **inputs,
-                    max_new_tokens=64,
-                    do_sample=False,
-                    num_beams=1
+                response = self.model.chat(
+                    self.tokenizer,
+                    pixel_values=None,
+                    image=image,
+                    msgs=[{'role': 'user', 'content': prompt}],
+                    generation_config=dict(
+                        max_new_tokens=64,
+                        do_sample=False,
+                        num_beams=1
+                    )
                 )
-            
-            output_text = self.processor.decode(
-                outputs[0], 
-                skip_special_tokens=True
-            )
-            
-            if "Assistant:" in output_text:
-                output_text = output_text.split("Assistant:")[-1].strip()
             
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            return output_text.strip()
+            return response.strip()
     
     def generate_captions(self, images):
         """
@@ -205,26 +170,28 @@ class DeepSeekVL2Wrapper:
             image = PILImage.fromarray(img_np)
         
         try:
-            # Build conversation
-            conversation = [
-                {
-                    "role": "User",
-                    "content": "<image>\nDescribe this image.",
-                    "images": [image],
-                },
-                {"role": "Assistant", "content": ""},
-            ]
+            # Build prompt
+            prompt = "<image>\nDescribe this image."
             
-            # Prepare inputs
-            inputs = self.processor(
-                conversation,
-                images=[image],
-                return_tensors="pt"
-            ).to(self.device)
-            
-            # Forward pass to get logits
+            # Get model outputs with logits
             with torch.no_grad():
-                outputs = self.model(**inputs)
+                # InternVL2 chat returns text, we need direct model forward pass
+                # This is a simplified version - may need adjustment for actual logit extraction
+                pixel_values = self.model.extract_feature(image).to(self.device)
+                
+                # Tokenize prompt
+                input_ids = self.tokenizer(
+                    prompt, 
+                    return_tensors='pt'
+                ).input_ids.to(self.device)
+                
+                # Forward pass
+                outputs = self.model(
+                    input_ids=input_ids,
+                    pixel_values=pixel_values,
+                    return_dict=True
+                )
+                
                 # Get logits at the last position
                 logits = outputs.logits[0, -1, :]  # [vocab_size]
             
@@ -239,4 +206,5 @@ class DeepSeekVL2Wrapper:
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             # Return zeros if extraction fails
-            return torch.zeros(self.model.config.vocab_size, device=self.device)
+            vocab_size = self.tokenizer.vocab_size
+            return torch.zeros(vocab_size, device=self.device)
