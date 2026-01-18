@@ -24,12 +24,16 @@ import torch.nn.functional as F
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import re
 from collections import defaultdict
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import textwrap
 
 # Add project root to path
 sys.path.append('/root/ICAT')
 
 from src.models.tinyllava_wrapper import TinyLLaVAWrapper
 from src.utils import DatasetLoader
+from src.utils.comparison_viz import create_attack_comparison
 import ribs
 
 # Setup logging
@@ -67,6 +71,36 @@ BLACKBOX_CONFIG = {
     'perturbation_size': 32,
     'target_image_size': 384
 }
+
+class MetricsTracker:
+    """Track metrics throughout training for visualization"""
+    def __init__(self):
+        self.iterations = []
+        self.qd_scores = []
+        self.coverages = []
+        self.max_fitnesses = []
+        self.total_queries = []
+        self.jsr_values = []
+        self.stealth_indices = []
+        self.query_efficiencies = []
+        
+    def update(self, iteration, archive, query_stats, metrics):
+        """Update all metrics"""
+        self.iterations.append(iteration)
+        self.qd_scores.append(archive.stats.qd_score)
+        self.coverages.append(archive.stats.coverage)
+        
+        # Get max fitness from archive
+        max_fit = -np.inf
+        for elite in archive:
+            if elite['objective'] is not None and elite['objective'] > max_fit:
+                max_fit = elite['objective']
+        self.max_fitnesses.append(max_fit if max_fit > -np.inf else 0.0)
+        
+        self.total_queries.append(query_stats['total_queries'])
+        self.jsr_values.append(metrics['jsr'])
+        self.stealth_indices.append(metrics['stealth_index'])
+        self.query_efficiencies.append(metrics['query_efficiency'])
 
 class QueryCounter:
     """Track and optimize query usage"""
@@ -315,7 +349,197 @@ def compute_jsr_and_stealth_metrics(archive, config):
         'successful_elites': len(successful_elites)
     }
 
-def save_blackbox_results(archive, fitness_engine, config, output_dir, args):
+def plot_archive_heatmap(archive, config, save_path):
+    """Create heatmap visualization of the archive"""
+    plt.figure(figsize=(10, 8))
+    
+    # Extract archive data
+    grid_x, grid_y = config['behavioral_grid']['resolution']
+    heatmap_data = np.full((grid_y, grid_x), np.nan)
+    
+    for elite in archive:
+        if elite['objective'] is not None:
+            # Get grid indices
+            idx = elite['index']
+            if isinstance(idx, (list, tuple)):
+                x_idx, y_idx = idx
+                heatmap_data[y_idx, x_idx] = elite['objective']
+    
+    # Plot heatmap
+    im = plt.imshow(heatmap_data, cmap='hot', origin='lower', aspect='auto',
+                   extent=[config['behavioral_grid']['bc1_range'][0],
+                          config['behavioral_grid']['bc1_range'][1],
+                          config['behavioral_grid']['bc2_range'][0],
+                          config['behavioral_grid']['bc2_range'][1]])
+    
+    plt.colorbar(im, label='Fitness (Toxicity Score)')
+    plt.xlabel('BC1: L-inf Stealth')
+    plt.ylabel('BC2: Query Efficiency')
+    plt.title('Archive Heatmap: Black-box Attack Success')
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    logger.info(f"Archive heatmap saved to {save_path}")
+
+def plot_training_curves(metrics_tracker, save_path):
+    """Plot training curves showing optimization progress"""
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+    fig.suptitle('Training Progress: Black-box Jailbreak Optimization', fontsize=16, fontweight='bold')
+    
+    # QD Score
+    axes[0, 0].plot(metrics_tracker.iterations, metrics_tracker.qd_scores, 'b-', linewidth=2)
+    axes[0, 0].set_xlabel('Iteration')
+    axes[0, 0].set_ylabel('QD Score')
+    axes[0, 0].set_title('Quality-Diversity Score')
+    axes[0, 0].grid(True, alpha=0.3)
+    
+    # Coverage
+    axes[0, 1].plot(metrics_tracker.iterations, metrics_tracker.coverages, 'g-', linewidth=2)
+    axes[0, 1].set_xlabel('Iteration')
+    axes[0, 1].set_ylabel('Coverage')
+    axes[0, 1].set_title('Archive Coverage')
+    axes[0, 1].grid(True, alpha=0.3)
+    
+    # Max Fitness
+    axes[0, 2].plot(metrics_tracker.iterations, metrics_tracker.max_fitnesses, 'r-', linewidth=2)
+    axes[0, 2].set_xlabel('Iteration')
+    axes[0, 2].set_ylabel('Max Fitness')
+    axes[0, 2].set_title('Best Fitness Score')
+    axes[0, 2].grid(True, alpha=0.3)
+    
+    # Total Queries
+    axes[1, 0].plot(metrics_tracker.iterations, metrics_tracker.total_queries, 'm-', linewidth=2)
+    axes[1, 0].set_xlabel('Iteration')
+    axes[1, 0].set_ylabel('Total Queries')
+    axes[1, 0].set_title('Query Count')
+    axes[1, 0].grid(True, alpha=0.3)
+    
+    # JSR (Jailbreak Success Rate)
+    axes[1, 1].plot(metrics_tracker.iterations, metrics_tracker.jsr_values, 'c-', linewidth=2)
+    axes[1, 1].set_xlabel('Iteration')
+    axes[1, 1].set_ylabel('JSR (%)')
+    axes[1, 1].set_title('Jailbreak Success Rate')
+    axes[1, 1].grid(True, alpha=0.3)
+    
+    # Query Efficiency
+    axes[1, 2].plot(metrics_tracker.iterations, metrics_tracker.query_efficiencies, 'y-', linewidth=2)
+    axes[1, 2].set_xlabel('Iteration')
+    axes[1, 2].set_ylabel('Query Efficiency (%)')
+    axes[1, 2].set_title('Query Efficiency')
+    axes[1, 2].grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    logger.info(f"Training curves saved to {save_path}")
+
+def create_example_visualizations(archive, model, original_image, config, output_dir, num_examples=5):
+    """Create visualizations for top attack examples"""
+    examples_dir = os.path.join(output_dir, "attack_examples")
+    os.makedirs(examples_dir, exist_ok=True)
+    
+    # Collect top elites
+    elites_list = []
+    for elite in archive:
+        if elite['objective'] is not None:
+            elites_list.append(elite)
+    
+    # Sort by fitness
+    elites_list.sort(key=lambda x: x['objective'], reverse=True)
+    
+    # Take top N
+    top_elites = elites_list[:min(num_examples, len(elites_list))]
+    
+    example_paths = []
+    
+    for idx, elite in enumerate(top_elites):
+        try:
+            # Reconstruct perturbation
+            pert_shape = (3, config['perturbation_size'], config['perturbation_size'])
+            perturbation = elite['solution'][:np.prod(pert_shape)].reshape(pert_shape)
+            
+            # Apply L-inf constraint
+            l_inf_max = config['l_inf_constraint'][1]
+            perturbation = np.clip(perturbation, -l_inf_max, l_inf_max)
+            
+            # Create attacked image (resize perturbation to match original)
+            pert_tensor = torch.from_numpy(perturbation).unsqueeze(0).float()
+            if original_image.shape[1] != pert_shape[1]:
+                pert_resized = F.interpolate(
+                    pert_tensor,
+                    size=(original_image.shape[1], original_image.shape[2]),
+                    mode='bilinear',
+                    align_corners=False
+                ).squeeze(0).numpy()
+            else:
+                pert_resized = perturbation
+            
+            attacked_image = np.clip(original_image + pert_resized, 0, 1)
+            
+            # Generate captions
+            orig_pil = Image.fromarray((original_image.transpose(1, 2, 0) * 255).astype(np.uint8))
+            attacked_pil = Image.fromarray((attacked_image.transpose(1, 2, 0) * 255).astype(np.uint8))
+            
+            orig_caption = model.generate_caption(orig_pil)
+            attacked_caption = model.generate_caption(attacked_pil)
+            
+            # Create visualization
+            save_path = os.path.join(examples_dir, f"example_{idx+1}_fitness_{elite['objective']:.3f}.png")
+            
+            create_attack_comparison(
+                original_image=original_image,
+                attacked_image=attacked_image,
+                original_caption=orig_caption,
+                attacked_caption=attacked_caption,
+                original_score=0.0,  # Placeholder
+                attacked_score=elite['objective'],
+                save_path=save_path,
+                bc1_value=elite['measures'][0],
+                bc2_value=elite['measures'][1],
+                bc1_name="L-inf Stealth",
+                bc2_name="Query Efficiency"
+            )
+            
+            example_paths.append(save_path)
+            
+        except Exception as e:
+            logger.warning(f"Failed to create visualization for elite {idx}: {e}")
+    
+    return example_paths
+
+def create_summary_grid(example_paths, save_path, max_images=5):
+    """Create a summary grid showing all examples"""
+    if not example_paths:
+        logger.warning("No example paths provided for summary grid")
+        return
+    
+    # Load images
+    images = []
+    for path in example_paths[:max_images]:
+        if os.path.exists(path):
+            img = plt.imread(path)
+            images.append(img)
+    
+    if not images:
+        logger.warning("No valid images found for summary grid")
+        return
+    
+    # Create grid
+    n_images = len(images)
+    fig = plt.figure(figsize=(20, 4 * n_images))
+    
+    for idx, img in enumerate(images):
+        ax = fig.add_subplot(n_images, 1, idx + 1)
+        ax.imshow(img)
+        ax.axis('off')
+        ax.set_title(f"Attack Example {idx + 1}", fontsize=14, fontweight='bold')
+    
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    logger.info(f"Summary grid saved to {save_path}")
+
+def save_blackbox_results(archive, fitness_engine, config, output_dir, args, metrics_tracker=None, model=None, original_image=None):
     """Save black-box attack results and successful elites"""
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
@@ -378,6 +602,27 @@ def save_blackbox_results(archive, fitness_engine, config, output_dir, args):
                 logger.warning(f"Failed to save elite {idx}: {e}")
     
     logger.info(f"Saved {saved_count} successful black-box elites")
+    
+    # Generate visualizations
+    if metrics_tracker is not None:
+        # Plot heatmap
+        heatmap_path = os.path.join(output_dir, "archive_heatmap.png")
+        plot_archive_heatmap(archive, config, heatmap_path)
+        
+        # Plot training curves
+        curves_path = os.path.join(output_dir, "training_curves.png")
+        plot_training_curves(metrics_tracker, curves_path)
+        
+        # Create attack example visualizations
+        if model is not None and original_image is not None:
+            example_paths = create_example_visualizations(
+                archive, model, original_image, config, output_dir, num_examples=5
+            )
+            
+            # Create summary grid
+            if example_paths:
+                summary_path = os.path.join(output_dir, "attack_summary_grid.png")
+                create_summary_grid(example_paths, summary_path, max_images=5)
     
     return results, saved_count
 
@@ -462,18 +707,38 @@ def main():
         qd_score_offset=-100.0
     )
     
-    # Create CMA-ES emitters for evolutionary search
-    num_emitters = 2  # Reduced for query efficiency
+    # Create diverse emitters for evolutionary search
+    # CMA-ES: Standard Covariance Matrix Adaptation Evolution Strategy
+    # LM-MA-ES: Limited Memory Matrix Adaptation Evolution Strategy
+    # Sep-CMA-ES: Separable CMA-ES (diagonal covariance)
     emitters = [
         ribs.emitters.EvolutionStrategyEmitter(
             archive,
             x0=np.zeros(solution_dim),
             sigma0=args.sigma0,
-            batch_size=args.batch_size
-        ) for _ in range(num_emitters)
+            batch_size=args.batch_size,
+            es="cma_es"  # CMA-ES
+        ),
+        ribs.emitters.EvolutionStrategyEmitter(
+            archive,
+            x0=np.zeros(solution_dim),
+            sigma0=args.sigma0,
+            batch_size=args.batch_size,
+            es="lm_ma_es"  # LM-MA-ES
+        ),
+        ribs.emitters.EvolutionStrategyEmitter(
+            archive,
+            x0=np.zeros(solution_dim),
+            sigma0=args.sigma0,
+            batch_size=args.batch_size,
+            es="sep_cma_es"  # Separable CMA-ES
+        )
     ]
     
     logger.info(f"Starting {args.iterations} iterations of black-box optimization...")
+    
+    # Initialize metrics tracker
+    metrics_tracker = MetricsTracker()
     
     # Main black-box QD optimization loop
     for iteration in tqdm(range(1, args.iterations + 1), desc="Black-box Attack Iterations"):
@@ -548,10 +813,13 @@ def main():
             
             emitter_start = emitter_end
         
-        # Periodic logging
+        # Periodic logging and metrics tracking
         if iteration % 50 == 0 or iteration == args.iterations:
             metrics = compute_jsr_and_stealth_metrics(archive, config)
             query_stats = fitness_engine.get_query_stats()
+            
+            # Update metrics tracker
+            metrics_tracker.update(iteration, archive, query_stats, metrics)
             
             logger.info(f"\
 [Iteration {iteration}/{args.iterations}] Black-box Attack Results:")
@@ -566,7 +834,8 @@ def main():
     logger.info("\
 Final black-box attack evaluation:")
     final_results, saved_elites = save_blackbox_results(
-        archive, fitness_engine, config, args.output_dir, args
+        archive, fitness_engine, config, args.output_dir, args,
+        metrics_tracker=metrics_tracker, model=model, original_image=original_image
     )
     
     # Print final results
