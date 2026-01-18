@@ -10,7 +10,7 @@
 
 ## 🔬 Research Objective
 
-This framework evaluates the **safety robustness** of modern Vision-Language Models (BLIP-2, PaliGemma, Qwen2-VL) against targeted visual jailbreaking attacks. Using Quality-Diversity optimization, we discover diverse adversarial perturbations within perceptually invisible ranges (L∞ 0.05-0.10) that force models to generate prohibited content.
+This framework evaluates the **safety robustness** of modern Vision-Language Models (InternVL2, Qwen2-VL) against targeted visual jailbreaking attacks. Using Quality-Diversity optimization, we discover diverse adversarial perturbations within perceptually invisible ranges (L∞ 0.05-0.10) that force models to generate prohibited content.
 
 ### Key Innovation
 
@@ -35,12 +35,9 @@ conda activate icat
 # Install dependencies
 pip install -r requirements.txt
 
-# HuggingFace authentication (for PaliGemma)
-huggingface-cli login
-
 # Run jailbreak red-teaming
 python main.py \
-    --model blip2 \
+    --model internvl2 \
     --dataset uit-viic \
     --algorithm cma_mae \
     --iterations 1000 \
@@ -133,9 +130,8 @@ JSR = (# bins with harmful activation) / (total filled bins) × 100%
 ICAT/
 ├── src/
 │   ├── models/                    # VLM wrappers
-│   │   ├── blip2_wrapper.py       # BLIP-2 (2.7B)
-│   │   ├── paligemma_wrapper.py   # PaliGemma (3B)
-│   │   └── qwen2vl_wrapper.py     # Qwen2-VL (2B) [Optional]
+│   │   ├── internvl2_wrapper.py   # InternVL2-2B
+│   │   └── qwen2vl_wrapper.py     # Qwen2-VL-2B-Instruct
 │   │
 │   ├── attack/                    # Jailbreak attack modules
 │   │   ├── harmful_lexicon.py     # Token lexicon management
@@ -162,24 +158,19 @@ ICAT/
 
 ## 🤖 Supported Models
 
-### BLIP-2 (Salesforce/blip2-opt-2.7b)
-- **Parameters**: 2.7B
-- **VRAM**: ~5-6GB
-- **Strengths**: Detailed captions, unconditional generation
-- **Logit Extraction**: Q-Former → Language Projection → OPT logits
-
-### PaliGemma (google/paligemma-3b-pt-224)
-- **Parameters**: 3B (instruction-tuned)
-- **VRAM**: ~6-7GB  
-- **Strengths**: Concise descriptions, strong instruction following
-- **Requirements**: HuggingFace authentication (gated model)
-- **Logit Extraction**: SigLIP vision + Gemma language model
-
-### Qwen2-VL (Qwen/Qwen2-VL-2B-Instruct) [Optional]
+### InternVL2-2B (OpenGVLab/InternVL2-2B)
 - **Parameters**: 2B
 - **VRAM**: ~4-5GB
-- **Strengths**: Dynamic resolution vision encoder
-- **Status**: Wrapper available, needs testing
+- **Strengths**: High-resolution vision encoder, strong multimodal reasoning
+- **Logit Extraction**: InternViT vision encoder → MLP projector → Qwen2 language model
+- **Compatibility**: T4 GPU compatible, stable on PyTorch 2.2.0
+
+### Qwen2-VL (Qwen/Qwen2-VL-2B-Instruct)
+- **Parameters**: 2B (instruction-tuned)
+- **VRAM**: ~4-5GB
+- **Strengths**: Dynamic resolution vision encoder, multilingual support
+- **Logit Extraction**: Vision Transformer → Cross-attention → Qwen2 language model
+- **Compatibility**: T4 GPU compatible, optimized for efficiency
 
 ---
 
@@ -189,7 +180,7 @@ ICAT/
 
 ```bash
 python main.py \
-    --model blip2                   # Model: blip2, paligemma, qwen2vl
+    --model internvl2               # Model: internvl2, qwen2vl
     --dataset uit-viic              # Dataset: uit-viic, flickr30k
     --algorithm cma_mae             # Algorithm: cma_me, cma_mae, cma_mega
     --iterations 1000               # QD iterations
@@ -221,7 +212,7 @@ python main.py \
 ```
 results/
 └── cma_mae/
-    └── blip2_Salesforce_blip2-opt-2.7b/
+    └── internvl2_OpenGVLab_InternVL2-2B/
         └── uit-viic/
             └── jailbreak_baseline/
                 ├── archive.csv                   # All discovered elites
