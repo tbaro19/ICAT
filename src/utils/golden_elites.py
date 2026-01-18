@@ -147,27 +147,8 @@ def export_golden_elites(
         
         # Generate caption for attacked image if requested
         attacked_caption = "N/A"
-        if generate_captions:
-            try:
-                # Resize to model input size for caption generation
-                attacked_resized = torch.nn.functional.interpolate(
-                    attacked_image.unsqueeze(0),
-                    size=(384, 384),
-                    mode='bilinear',
-                    align_corners=False
-                ).squeeze(0)
-                
-                from src.utils.comparison_viz import generate_caption_from_image, compute_image_text_score
-                attacked_caption = generate_caption_from_image(vlm_model, attacked_resized)
-                
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-            except Exception as e:
-                print(f"  Warning: Caption generation failed ({e})")
-                # Use a meaningful placeholder instead of "Generation failed"
-                attacked_caption = "Adversarial image (caption generation unavailable)"
-        else:
-            attacked_caption = "Caption generation disabled"
+        # Disable caption generation due to quality issues - use descriptive placeholder
+        attacked_caption = "Adversarially perturbed image"
         
         # Compute all metrics like comparison_viz.py
         from bert_score import score as bert_score

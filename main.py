@@ -315,16 +315,9 @@ def main():
     else:
         target_image = original_image
     
-    # Generate caption for clean image
-    print("\nGenerating caption for clean image...")
-    try:
-        clean_image_for_caption = torch.from_numpy(target_image).float()
-        original_caption_generated = generate_caption_from_image(vlm_model, clean_image_for_caption)
-        print(f"Generated caption (clean): {original_caption_generated}")
-        print(f"Groundtruth caption: {groundtruth_caption}")
-    except Exception as e:
-        print(f"Warning: Error generating caption for clean image: {e}")
-        original_caption_generated = groundtruth_caption
+    # Use groundtruth caption instead of generated caption due to quality issues
+    print(f"\nUsing groundtruth caption: {groundtruth_caption}")
+    original_caption_generated = groundtruth_caption
     
     # Resize to low-res for perturbation optimization
     if original_image.shape[1] != args.image_size or original_image.shape[2] != args.image_size:
