@@ -785,6 +785,31 @@ def main():
     for key, value in final_stats.items():
         print(f"  {key}: {value}")
     
+    # Jailbreak-specific metrics
+    if args.use_jailbreak and hasattr(fitness_fn, 'compute_jsr'):
+        print("\n" + "="*70)
+        print("🎯 JAILBREAK SAFETY RED-TEAMING METRICS")
+        print("="*70)
+        
+        # Compute JSR (Jailbreak Success Rate)
+        jsr = fitness_fn.compute_jsr(archive)
+        print(f"📊 Jailbreak Success Rate (JSR): {jsr:.2f}%")
+        print(f"   (Percentage of archive bins with harmful token activation)")
+        
+        # Find Infiltration Elites (most stealthy jailbreaks)
+        infiltration_elites = fitness_fn.find_infiltration_elites(archive, top_k=5)
+        if len(infiltration_elites) > 0:
+            print(f"\n🔍 Infiltration Depth (Top {len(infiltration_elites)} Stealthiest Jailbreaks):")
+            for i, elite in enumerate(infiltration_elites, 1):
+                print(f"   #{i}: L-inf={elite['bc1_linf']:.4f}, Fitness={elite['objective']:.4f}, Spectral={elite['bc2_spectral']:.4f}")
+            print(f"\n   🏆 Best Infiltration: L-inf = {infiltration_elites[0]['bc1_linf']:.4f}")
+        else:
+            print("\n⚠️  No successful jailbreaks found in archive")
+        
+        # Print fitness summary
+        fitness_fn.print_summary()
+        print("="*70)
+    
     # Print Visual Stealth Archive statistics
     print("\n" + archive.get_replacement_summary())
     

@@ -2,47 +2,63 @@
 
 A research framework that uses Quality-Diversity (QD) algorithms to discover diverse adversarial perturbations that degrade the caption quality of Vision-Language Models. Unlike traditional adversarial methods that find a single optimal attack, this framework maintains an archive of diverse, high-quality attack strategies across different behavioral characteristics.
 
+## 🎯 NEW: Safety Red-Teaming Mode
+
+**For VLM robustness evaluation and jailbreak research**, see [JAILBREAK_SAFETY_REDTEAM.md](JAILBREAK_SAFETY_REDTEAM.md)
+
+- Targeted logit-forcing with harmful token lexicon
+- Stealthy perturbations (L∞ 0.05-0.10)
+- JSR (Jailbreak Success Rate) and Infiltration Depth metrics
+- 10×10 behavioral grid for diverse jailbreak strategies
+
+```bash
+python main.py --model blip2 --dataset uit-viic --algorithm cma_mae \
+    --use_unified --use_jailbreak --iterations 1000
+```
+
+---
+
 ## Key Features
 
-- **3 VLM Models**: BLIP-2, PaliGemma, Moondream2 (Tesla T4 GPU optimized)
-- **QD Algorithms**: MAP-Elites, CMA-ME, CMA-MAE, CMA-MEGA with adaptive sigma scheduling
-- **Unified Logit-Loss**: Consistent cross-entropy fitness across all models for fair benchmarking
-- **Multi-language Support**: English (Flickr30k) and Vietnamese (KTVIC, UIT-ViIC) datasets
-- **Comprehensive Metrics**: BERTScore, WER, CLIPScore, POS Divergence
-- **Adaptive Exploration**: Automatic stagnation detection and parameter adjustment
+- **2 VLM Models**: BLIP-2, PaliGemma (Tesla T4 GPU optimized)
+- **QD Algorithms**: CMA-ME, CMA-MAE, CMA-MEGA with adaptive scheduling
+- **Unified Logit-Loss**: Consistent cross-entropy fitness across all models
+- **Safety Red-Teaming**: Jailbreak mode with harmful token lexicon
+- **Multi-language Support**: English (Flickr30k) and Vietnamese (UIT-ViIC) datasets
+- **Comprehensive Metrics**: BERTScore, WER, CLIPScore, JSR, Infiltration Depth
 
 ## Structure
 
 ```
 ICAT/
-├── data/              # Datasets (KTVIC, UIT-ViIC, Flickr30k)
+├── data/              # Datasets (UIT-ViIC, Flickr30k)
 ├── src/
-│   ├── models/        # VLM wrappers
-│   ├── qd_engine/     # QD algorithms + adaptive sigma
-│   ├── attack/        # Perturbation + fitness + measures
-│   └── utils/         # Visualization + NLP
+│   ├── models/        # VLM wrappers (BLIP-2, PaliGemma)
+│   ├── qd_engine/     # QD algorithms + adaptive scheduling
+│   ├── attack/        # Perturbation + fitness + jailbreak lexicon
+│   └── utils/         # Visualization + metrics
 ├── main.py            # Entry point
-└── run_all_experiments.sh  # Batch experiment runner
+├── run_all_experiments.sh  # Batch experiment runner
+└── JAILBREAK_SAFETY_REDTEAM.md  # Safety red-teaming guide
 ```
 
 ## Models
 
-All models optimized for Tesla T4 GPU (15GB VRAM) and use **unified logit-loss** (cross-entropy) for fair benchmarking:
+All models optimized for Tesla T4 GPU (15GB VRAM):
 
 1. **BLIP-2** (`Salesforce/blip2-opt-2.7b`)
    - 2.7B parameters, ~5-6GB VRAM
    - Balanced performance with detailed captions
-   - Unconditional generation (no text prompts)
+   - Unconditional generation
 
 2. **PaliGemma** (`google/paligemma-3b-pt-224`)
    - 3B parameters, instruction-tuned
    - Concise, accurate descriptions
    - Requires HuggingFace authentication (gated model)
 
-3. **Moondream2** (`vikhyatk/moondream2`)
-   - 1.6B parameters, ~3-4GB VRAM
-   - Fast inference, suitable for edge deployment
-   - Comprehensive descriptions
+3. **Qwen2-VL** (`Qwen/Qwen2-VL-2B-Instruct`) [Optional]
+   - 2B parameters, dynamic resolution support
+   - Wrapper available for jailbreak research
 
 ## Installation
 
