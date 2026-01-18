@@ -100,14 +100,6 @@ class UnifiedAttackManager:
             consecutive_warnings=2
         )
         
-        # Cache text embeddings for faster evaluation (if using similarity fitness)
-        self.original_text_emb = None
-        self.groundtruth_text_emb = None
-        if not use_logit_loss:
-            with torch.no_grad():
-                self.original_text_emb = vlm_model.get_text_embeddings([original_caption])
-                self.groundtruth_text_emb = vlm_model.get_text_embeddings([groundtruth_caption])
-        
         # Statistics
         self.iteration_count = 0
         self.total_evaluations = 0
