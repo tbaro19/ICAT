@@ -31,8 +31,7 @@ class Qwen2VLWrapper:
             model_name,
             torch_dtype=torch.bfloat16,
             device_map="auto",
-            low_cpu_mem_usage=True,
-            local_files_only=True
+            low_cpu_mem_usage=True
         )
         
         # Load processor with dynamic resolution support
@@ -41,8 +40,7 @@ class Qwen2VLWrapper:
         self.processor = AutoProcessor.from_pretrained(
             model_name, 
             min_pixels=min_pixels, 
-            max_pixels=max_pixels,
-            local_files_only=True
+            max_pixels=max_pixels
         )
         
         self.model.eval()
@@ -114,9 +112,7 @@ class Qwen2VLWrapper:
                     **inputs,
                     max_new_tokens=128,
                     do_sample=False,
-                    num_beams=3,
-                    repetition_penalty=1.2,
-                    early_stopping=True
+                    repetition_penalty=1.2
                 )
             
             # Trim generated ids to only new tokens
