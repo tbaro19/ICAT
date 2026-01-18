@@ -261,6 +261,9 @@ def generate_adversarial_captions(model, perturbed_images, fitness_engine):
     # Compute black-box fitness scores
     fitness_scores = fitness_engine.compute_fitness(captions)
     
+    # Convert to numpy array for pyribs
+    fitness_scores = np.array(fitness_scores, dtype=np.float32)
+    
     return fitness_scores, captions, query_counts
 
 def compute_jsr_and_stealth_metrics(archive, config):
@@ -503,6 +506,9 @@ def main():
             perturbations, query_counts, config
         )
         
+        # Create status array (all solutions successfully evaluated)
+        status = np.ones(len(all_solutions), dtype=bool)
+        
         # Update archive and emitters
         archive.add(all_solutions, fitness_scores, behavioral_chars)
         
@@ -515,9 +521,10 @@ def main():
                 emitter_solutions = all_solutions[emitter_start:emitter_end]
                 emitter_fitness = fitness_scores[emitter_start:emitter_end]
                 emitter_bcs = behavioral_chars[emitter_start:emitter_end]
+                emitter_status = status[emitter_start:emitter_end]
                 
                 # tell() requires: solutions, objective, measures, add_info for pyribs
-                emitter.tell(emitter_solutions, emitter_fitness, emitter_bcs, {})
+                emitter.tell(emitter_solutions, emitter_fitness, emitter_bcs, {"status": emitter_status})
             
             emitter_start = emitter_end
         
