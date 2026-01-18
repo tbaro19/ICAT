@@ -37,16 +37,17 @@ class DeepSeekVL2Wrapper:
         self.processor = DeepseekVLV2Processor.from_pretrained(model_name)
         self.tokenizer = self.processor.tokenizer
         
-        # Load model
-        self.model = AutoModelForCausalLM.from_pretrained(
+        # Load model using the correct class
+        self.model = DeepseekVLV2ForCausalLM.from_pretrained(
             model_name,
             trust_remote_code=True,
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True
+            torch_dtype=torch.bfloat16
         )
         
         if device == "cuda":
             self.model = self.model.cuda()
+        else:
+            self.model = self.model.cpu()
         
         self.model.eval()
         
