@@ -31,7 +31,8 @@ class Qwen2VLWrapper:
             model_name,
             torch_dtype=torch.bfloat16,
             device_map="auto",
-            low_cpu_mem_usage=True
+            low_cpu_mem_usage=True,
+            local_files_only=True
         )
         
         # Load processor with dynamic resolution support
@@ -40,7 +41,8 @@ class Qwen2VLWrapper:
         self.processor = AutoProcessor.from_pretrained(
             model_name, 
             min_pixels=min_pixels, 
-            max_pixels=max_pixels
+            max_pixels=max_pixels,
+            local_files_only=True
         )
         
         self.model.eval()

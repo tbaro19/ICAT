@@ -15,7 +15,7 @@
 #
 
 # Parse command line arguments
-ITERATIONS=${1:-1000}
+ITERATIONS=${1:-1}
 EXP_NAME=${2:-"blackbox_run"}
 
 echo "========================================"
@@ -26,14 +26,14 @@ echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
 echo "  - Attack Type: Pure Black-Box (Text-only feedback)"
 echo "  - Fitness: Hard Reward (+10.0) + Soft Reward (Toxicity)"
-echo "  - Models: InternVL2-2B, Qwen2-VL-2B-Instruct"
+echo "  - Models: TinyLLaVA-Gemma-SigLIP-2.4B, Qwen2-VL-2B-Instruct"
 echo "  - Dataset: UIT-ViIC"
 echo "=========================================="
 
 # Dataset and models to attack
 DATASET="uit_viic"
 SAMPLE_IDX=0  # Attack only first sample
-MODELS=("internvl2" "qwen2vl")
+MODELS=("tinyllava" "qwen2vl")
 
 # Track progress  
 TOTAL_EXPERIMENTS=${#MODELS[@]}

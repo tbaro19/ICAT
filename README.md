@@ -10,7 +10,7 @@
 
 ## 🔬 Research Objective
 
-This framework evaluates the **safety robustness** of modern Vision-Language Models (InternVL2, Qwen2-VL) using **pure black-box attacks** - no gradient access, no internal model state, only text-based output feedback. Using Query-Efficient Quality-Diversity optimization with dual reward systems (hard keyword detection + soft toxicity scoring), we discover diverse adversarial perturbations within stealthy ranges (L∞ 0.05-0.10) that trigger harmful content generation.
+This framework evaluates the **safety robustness** of modern Vision-Language Models (TinyLLaVA, Qwen2-VL) using **pure black-box attacks** - no gradient access, no internal model state, only text-based output feedback. Using Query-Efficient Quality-Diversity optimization with dual reward systems (hard keyword detection + soft toxicity scoring), we discover diverse adversarial perturbations within stealthy ranges (L∞ 0.05-0.10) that trigger harmful content generation.
 
 ### Key Innovation
 
@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 # Run black-box jailbreak attack
 python blackbox_jailbreak_main.py \
-    --model internvl2 \
+    --model tinyllava \
     --dataset uit_viic \
     --iterations 1000 \
     --batch_size 4 \
@@ -167,7 +167,7 @@ ICAT/
 │
 ├── src/
 │   ├── models/                    # VLM wrappers
-│   │   ├── internvl2_wrapper.py   # InternVL2-2B
+│   │   ├── tinyllava_wrapper.py   # TinyLLaVA-Gemma-SigLIP-2.4B
 │   │   └── qwen2vl_wrapper.py     # Qwen2-VL-2B-Instruct (optional)
 │   │
 │   └── utils/                     # Dataset loading
@@ -181,10 +181,10 @@ ICAT/
 
 ## 🤖 Supported Models
 
-### InternVL2-2B (OpenGVLab/InternVL2-2B)
-- **Parameters**: 2B
-- **VRAM**: ~4-5GB
-- **Strengths**: High-resolution vision encoder, strong multimodal reasoning
+### TinyLLaVA-Gemma-SigLIP-2.4B (tinyllava/TinyLLaVA-Gemma-SigLIP-2.4B)
+- **Parameters**: 2.4B
+- **VRAM**: ~5-6GB
+- **Strengths**: Efficient small VLM, SigLIP vision encoder, strong instruction following
 - **Black-box Attack**: Text-only caption generation → Keyword detection + Toxicity scoring
 - **Compatibility**: T4 GPU compatible, PyTorch 2.0+
 
@@ -205,7 +205,7 @@ ICAT/
 
 ```bash
 python blackbox_jailbreak_main.py \
-    --model internvl2               # Model: internvl2
+    --model tinyllava               # Model: tinyllava
     --dataset uit_viic              # Dataset: uit_viic, coco
     --iterations 1000               # QD iterations
     --batch_size 4                  # Small batches for query efficiency
@@ -239,7 +239,7 @@ python blackbox_jailbreak_main.py \
 
 ```
 results/blackbox_attack/
-├── blackbox_results_internvl2_uit_viic_0.json  # Main results (JSON)
+├── blackbox_results_tinyllava_uit_viic_0.json  # Main results (JSON)
 ├── attack_summary.txt                          # Human-readable summary
 ├── blackbox_attack_analysis.png                # Visualizations (PNG)
 │
