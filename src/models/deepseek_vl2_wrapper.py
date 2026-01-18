@@ -2,18 +2,21 @@
 DeepSeek-VL2-Tiny Model Wrapper for Vision-Language Tasks
 Efficient 1B parameter model with strong performance
 
-Note: Requires transformers with DeepSeek-VL2 support:
-  pip install git+https://github.com/deepseek-ai/DeepSeek-VL2.git
-  or use the model's custom loading code
+Installation:
+  git clone https://github.com/deepseek-ai/DeepSeek-VL2.git
+  cd DeepSeek-VL2
+  pip install -e .
 """
 import torch
 import numpy as np
 from PIL import Image
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM
+from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
+from deepseek_vl2.utils.io import load_pil_images
 
 
 class DeepSeekVL2Wrapper:
-    """Wrapper for DeepSeek-VL2-Tiny model"""
+    """Wrapper for DeepSeek-VL2-Tiny model using official API"""
     
     def __init__(self, model_name: str = "deepseek-ai/deepseek-vl2-tiny", device: str = "cuda"):
         """
@@ -28,38 +31,26 @@ class DeepSeekVL2Wrapper:
         self.model_name = model_name
         
         print(f"Loading DeepSeek-VL2-Tiny model: {model_name}")
-        print("Note: This model requires transformers with deepseek_vl_v2 support")
+        print("Using official DeepSeek-VL2 API")
         
-        try:
-            # Load model with trust_remote_code
-            self.model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                torch_dtype=torch.bfloat16,
-                device_map="auto",
-                low_cpu_mem_usage=True,
-                trust_remote_code=True
-            )
-            
-            # Load tokenizer
-            self.tokenizer = AutoTokenizer.from_pretrained(
-                model_name,
-                trust_remote_code=True
-            )
-            
-            self.model.eval()
-            
-            print(f"✓ DeepSeek-VL2-Tiny loaded on {device}")
-            
-        except ValueError as e:
-            if "deepseek_vl_v2" in str(e):
-                print(f"\n⚠️ Error: DeepSeek-VL2 model type not recognized by transformers")
-                print(f"This model requires special installation:")
-                print(f"  Option 1: pip install git+https://github.com/deepseek-ai/DeepSeek-VL2.git")
-                print(f"  Option 2: pip install git+https://github.com/huggingface/transformers.git")
-                print(f"\nPlease install the required package and try again.")
-                raise RuntimeError(f"DeepSeek-VL2 requires updated transformers library") from e
-            else:
-                raise
+        # Load processor (handles tokenization and image processing)
+        self.processor = DeepseekVLV2Processor.from_pretrained(model_name)
+        self.tokenizer = self.processor.tokenizer
+        
+        # Load model
+        self.model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            trust_remote_code=True,
+            torch_dtype=torch.bfloat16,
+            low_cpu_mem_usage=True
+        )
+        
+        if device == "cuda":
+            self.model = self.model.cuda()
+        
+        self.model.eval()
+        
+        print(f"✓ DeepSeek-VL2-Tiny loaded on {device}")
     
     def generate_caption(self, image, max_length: int = 100):
         """
@@ -86,22 +77,52 @@ class DeepSeekVL2Wrapper:
             image = PILImage.fromarray(img_np)
         
         try:
-            # DeepSeek-VL2 uses the generate method with images
+            # Prepare conversation format
+            conversation = [
+                {
+                    "role": "<|User|>",
+                    "content": "<image>\nDescribe this image in detail.",
+                    "images": [image],
+                },
+                {"role": "<|Assistant|>", "content": ""},
+            ]
+            
+            # Prepare inputs
             with torch.no_grad():
-                response, _ = self.model.generate(
-                    image=image,
-                    text="Describe this image in detail.",
-                    tokenizer=self.tokenizer,
-                    max_new_tokens=128,
+                prepare_inputs = self.processor(
+                    conversations=conversation,
+                    images=[image],
+                    force_batchify=True,
+                    system_prompt=""
+                ).to(self.model.device)
+                
+                # Get image embeddings
+                inputs_embeds = self.model.prepare_inputs_embeds(**prepare_inputs)
+                
+                # Generate response
+                outputs = self.model.language.generate(
+                    inputs_embeds=inputs_embeds,
+                    attention_mask=prepare_inputs.attention_mask,
+                    pad_token_id=self.tokenizer.eos_token_id,
+                    bos_token_id=self.tokenizer.bos_token_id,
+                    eos_token_id=self.tokenizer.eos_token_id,
+                    max_new_tokens=max_length,
                     do_sample=False,
-                    num_beams=3
+                    use_cache=True
                 )
+                
+                # Decode response
+                answer = self.tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
+                
+                # Extract answer content (remove prompt)
+                if "<|Assistant|>" in answer:
+                    answer = answer.split("<|Assistant|>")[-1].strip()
             
             # Clear cache
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            return response.strip()
+            return answer
             
         except torch.cuda.OutOfMemoryError:
             print("Warning: OOM during caption generation, clearing cache and retrying...")
@@ -109,20 +130,41 @@ class DeepSeekVL2Wrapper:
                 torch.cuda.empty_cache()
             
             # Retry with simpler generation
+            conversation = [
+                {
+                    "role": "<|User|>",
+                    "content": "<image>\nDescribe this image.",
+                    "images": [image],
+                },
+                {"role": "<|Assistant|>", "content": ""},
+            ]
+            
             with torch.no_grad():
-                response, _ = self.model.generate(
-                    image=image,
-                    text="Describe this image.",
-                    tokenizer=self.tokenizer,
+                prepare_inputs = self.processor(
+                    conversations=conversation,
+                    images=[image],
+                    force_batchify=True,
+                    system_prompt=""
+                ).to(self.model.device)
+                
+                inputs_embeds = self.model.prepare_inputs_embeds(**prepare_inputs)
+                
+                outputs = self.model.language.generate(
+                    inputs_embeds=inputs_embeds,
+                    attention_mask=prepare_inputs.attention_mask,
+                    pad_token_id=self.tokenizer.eos_token_id,
                     max_new_tokens=64,
-                    do_sample=False,
-                    num_beams=1
+                    do_sample=False
                 )
+                
+                answer = self.tokenizer.decode(outputs[0].cpu().tolist(), skip_special_tokens=True)
+                if "<|Assistant|>" in answer:
+                    answer = answer.split("<|Assistant|>")[-1].strip()
             
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
-            return response.strip()
+            return answer
     
     def generate_captions(self, images):
         """
@@ -177,14 +219,33 @@ class DeepSeekVL2Wrapper:
             image = PILImage.fromarray(img_np)
         
         try:
-            # Get model outputs with logits
+            # Prepare conversation
+            conversation = [
+                {
+                    "role": "<|User|>",
+                    "content": "<image>\nDescribe this image.",
+                    "images": [image],
+                },
+                {"role": "<|Assistant|>", "content": ""},
+            ]
+            
             with torch.no_grad():
-                # Use the model's forward pass to get logits
-                outputs = self.model.forward_with_image(
-                    image=image,
-                    text="Describe this image.",
-                    tokenizer=self.tokenizer,
-                    return_logits=True
+                # Prepare inputs
+                prepare_inputs = self.processor(
+                    conversations=conversation,
+                    images=[image],
+                    force_batchify=True,
+                    system_prompt=""
+                ).to(self.model.device)
+                
+                # Get image embeddings
+                inputs_embeds = self.model.prepare_inputs_embeds(**prepare_inputs)
+                
+                # Forward pass to get logits
+                outputs = self.model.language(
+                    inputs_embeds=inputs_embeds,
+                    attention_mask=prepare_inputs.attention_mask,
+                    return_dict=True
                 )
                 
                 # Get logits at the last position
