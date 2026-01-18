@@ -1,4 +1,4 @@
-# 🎯 Query-Efficient Black-Box Visual Jailbreaking Framework
+# Quality-Diversity Optimization for Diverse Black-box Attacks on Image Captioning Models
 
 **A purely black-box, query-efficient approach to evaluating Vision-Language Model safety through text-only feedback and evolutionary optimization.**
 
@@ -195,7 +195,6 @@ ICAT/
 - **Black-box Attack**: Text-only feedback with toxicity classifier
 - **Compatibility**: T4 GPU compatible
 
-*Note: Framework is pure black-box - works with any VLM that generates text captions.*
 
 ---
 
@@ -385,46 +384,6 @@ Query Budget Exhausted
 - Malicious content generation
 - Unauthorized security testing
 - Bypassing safety guardrails for harmful purposes
-
-### 📝 Responsible Disclosure
-
-If you discover critical vulnerabilities:
-
-1. **Contact model developer privately** (security@company.com)
-2. **Provide detailed reproduction steps** (without public disclosure)
-3. **Allow 90 days for patching** before publication
-4. **Publish responsibly** with mitigation recommendations
-
----
-
-## 📚 Citation
-
-If you use this framework in your research:
-
-```bibtex
-@misc{icat_blackbox_2026,
-  title={Query-Efficient Black-Box Visual Jailbreaking: A Zero-Order Approach to VLM Safety Evaluation},
-  author={[Your Name]},
-  year={2026},
-  howpublished={\\url{https://github.com/tbaro19/ICAT}},
-  note={Pure black-box framework with dual reward system for VLM safety assessment}
-}
-```
-
----
-
-## 🤝 Contributing
-
-We welcome contributions that enhance safety research:
-
-- Additional VLM model wrappers
-- Improved logit extraction methods
-- Enhanced behavioral characteristics
-- Better visualization tools
-- Defensive techniques
-
-**All contributions must comply with ethical AI research standards.**
-
 ---
 
 ## � Documentation
@@ -451,18 +410,3 @@ We welcome contributions that enhance safety research:
 
 **AI Safety is a collective responsibility.** This tool exists to identify vulnerabilities so they can be fixed, not to exploit them.
 
----
-
-## 📞 Contact
-
-- **Issues**: [GitHub Issues](https://github.com/tbaro19/ICAT/issues)
-- **Research Collaborations**: Contact via institutional email
-- **Security Disclosures**: Use private channels for vulnerability reports
-
----
-
-**Status**: Active Research Project (January 2026)  
-**License**: MIT  
-**Maintained by**: AI Safety Research Team
-
-*Evaluating VLM safety through query-efficient black-box attacks and responsible disclosure.*
