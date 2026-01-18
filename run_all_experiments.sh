@@ -15,7 +15,7 @@
 #
 
 # Parse command line arguments
-ITERATIONS=${1:-1000}
+ITERATIONS=${1:-1}
 EXP_NAME=${2:-"jailbreak_run"}
 
 # All QD algorithms to run
@@ -79,10 +79,10 @@ for dataset in "${DATASETS[@]}"; do
         ${UNIFIED_FLAGS}
     
     if [ $? -eq 0 ]; then
-        echo "✓ Successfully completed BLIP-2 on ${dataset}"
-        echo "  Results saved to: results/${QD_ALGO}/blip2_Salesforce_blip2-opt-2.7b/${dataset}/${EXP_NAME}/"
+        echo "✓ Successfully completed DeepSeek-VL2 on ${dataset}"
+        echo "  Results saved to: results/${QD_ALGO}/deepseek_deepseek-ai_deepseek-vl2-tiny/${dataset}/${EXP_NAME}/"
     else
-        echo "✗ Failed: BLIP-2 on ${dataset}"
+        echo "✗ Failed: DeepSeek-VL2 on ${dataset}"
     fi
 done
 
@@ -112,31 +112,31 @@ for dataset in "${DATASETS[@]}"; do
     fi
 done
 
-# Run Qwen2-VL experiments (OPTIONAL - uncomment to enable)
-# echo ""
-# echo "========== Qwen2-VL Experiments =========="
-# for dataset in "${DATASETS[@]}"; do
-#     CURRENT=$((CURRENT + 1))
-#     echo ""
-#     echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Qwen2-VL on ${dataset}..."
-#     echo "Command: python main.py --model qwen2vl --model_name ${MODEL_QWEN2VL} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
-#     
-#     python main.py \
-#         --model qwen2vl \
-#         --model_name "${MODEL_QWEN2VL}" \
-#         --dataset "${dataset}" \
-#         --algorithm "${QD_ALGO}" \
-#         --iterations ${ITERATIONS} \
-#         --exp_name "${EXP_NAME}" \
-#         ${UNIFIED_FLAGS}
-#     
-#     if [ $? -eq 0 ]; then
-#         echo "✓ Successfully completed Qwen2-VL on ${dataset}"
-#         echo "  Results saved to: results/${QD_ALGO}/qwen2vl_Qwen_Qwen2-VL-2B-Instruct/${dataset}/${EXP_NAME}/"
-#     else
-#         echo "✗ Failed: Qwen2-VL on ${dataset}"
-#     fi
-# done
+Run Qwen2-VL experiments (OPTIONAL - uncomment to enable)
+echo ""
+echo "========== Qwen2-VL Experiments =========="
+for dataset in "${DATASETS[@]}"; do
+    CURRENT=$((CURRENT + 1))
+    echo ""
+    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Qwen2-VL on ${dataset}..."
+    echo "Command: python main.py --model qwen2vl --model_name ${MODEL_QWEN2VL} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
+    
+    python main.py \
+        --model qwen2vl \
+        --model_name "${MODEL_QWEN2VL}" \
+        --dataset "${dataset}" \
+        --algorithm "${QD_ALGO}" \
+        --iterations ${ITERATIONS} \
+        --exp_name "${EXP_NAME}" \
+        ${UNIFIED_FLAGS}
+    
+    if [ $? -eq 0 ]; then
+        echo "✓ Successfully completed Qwen2-VL on ${dataset}"
+        echo "  Results saved to: results/${QD_ALGO}/qwen2vl_Qwen_Qwen2-VL-2B-Instruct/${dataset}/${EXP_NAME}/"
+    else
+        echo "✗ Failed: Qwen2-VL on ${dataset}"
+    fi
+done
 
 echo ""
 echo "========================================"

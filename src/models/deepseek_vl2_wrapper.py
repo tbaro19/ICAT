@@ -11,6 +11,22 @@ import torch
 import numpy as np
 from PIL import Image
 from transformers import AutoModelForCausalLM
+
+# Monkey patch torch.library.register_fake to skip torchvision operator registration
+# This fixes: RuntimeError: operator torchvision::nms does not exist
+_original_register_fake = torch.library.register_fake
+
+def _patched_register_fake(schema_or_name, *args, **kwargs):
+    """Skip torchvision operator registration that causes errors with torch 2.5.1"""
+    if isinstance(schema_or_name, str) and 'torchvision::' in schema_or_name:
+        # Return dummy decorator for torchvision operators
+        def dummy_decorator(fn):
+            return fn
+        return dummy_decorator
+    return _original_register_fake(schema_or_name, *args, **kwargs)
+
+torch.library.register_fake = _patched_register_fake
+
 from deepseek_vl2.models import DeepseekVLV2Processor, DeepseekVLV2ForCausalLM
 from deepseek_vl2.utils.io import load_pil_images
 
@@ -38,10 +54,11 @@ class DeepSeekVL2Wrapper:
         self.tokenizer = self.processor.tokenizer
         
         # Load model using the correct class
+        # Use float16 instead of bfloat16 for better compatibility with older GPUs (T4, etc.)
         self.model = DeepseekVLV2ForCausalLM.from_pretrained(
             model_name,
             trust_remote_code=True,
-            torch_dtype=torch.bfloat16
+            torch_dtype=torch.float16  # Changed from bfloat16 for T4 compatibility
         )
         
         if device == "cuda":
