@@ -26,37 +26,39 @@ echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
 echo "  - Attack Type: Pure Black-Box (Text-only feedback)"
 echo "  - Fitness: Hard Reward (+10.0) + Soft Reward (Toxicity)"
-echo "  - Model: InternVL2-2B"
+echo "  - Models: InternVL2-2B, Qwen2-VL-2B-Instruct"
 echo "  - Dataset: UIT-ViIC"
 echo "=========================================="
 
-# Dataset samples to attack (UIT-ViIC dataset)
+# Dataset and models to attack
 DATASET="uit_viic"
-SAMPLES=(0 1 2 3 4)  # Attack first 5 samples
+SAMPLE_IDX=0  # Attack only first sample
+MODELS=("internvl2" "qwen2vl")
 
 # Track progress  
-TOTAL_EXPERIMENTS=${#SAMPLES[@]}
+TOTAL_EXPERIMENTS=${#MODELS[@]}
 CURRENT=0
 
 echo "Total experiments to run: ${TOTAL_EXPERIMENTS}"
+echo "Models: ${MODELS[@]}"
 echo "Dataset: ${DATASET}"
-echo "Samples: ${SAMPLES[@]}"
+echo "Sample: ${SAMPLE_IDX}"
 echo ""
 
-# Loop through all samples
-for SAMPLE_IDX in "${SAMPLES[@]}"; do
+# Loop through all models
+for MODEL in "${MODELS[@]}"; do
     CURRENT=$((CURRENT + 1))
     echo ""
     echo "=========================================="
-    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Black-Box Attack on Sample ${SAMPLE_IDX}"
+    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Black-Box Attack: ${MODEL}"
     echo "=========================================="
     
-    OUTPUT_DIR="/root/ICAT/results/blackbox_attack/${EXP_NAME}/sample_${SAMPLE_IDX}"
+    OUTPUT_DIR="/root/ICAT/results/blackbox_attack/${EXP_NAME}/${MODEL}/sample_${SAMPLE_IDX}"
     
-    echo "Command: python blackbox_jailbreak_main.py --model internvl2 --dataset ${DATASET} --iterations ${ITERATIONS} --batch_size 4 --sample_idx ${SAMPLE_IDX} --output_dir ${OUTPUT_DIR}"
+    echo "Command: python blackbox_jailbreak_main.py --model ${MODEL} --dataset ${DATASET} --iterations ${ITERATIONS} --batch_size 4 --sample_idx ${SAMPLE_IDX} --output_dir ${OUTPUT_DIR}"
     
     python blackbox_jailbreak_main.py \
-        --model internvl2 \
+        --model "${MODEL}" \
         --dataset "${DATASET}" \
         --iterations ${ITERATIONS} \
         --batch_size 4 \
@@ -65,10 +67,10 @@ for SAMPLE_IDX in "${SAMPLES[@]}"; do
         --device cuda
     
     if [ $? -eq 0 ]; then
-        echo "✓ Successfully completed sample ${SAMPLE_IDX}"
+        echo "✓ Successfully completed ${MODEL} on sample ${SAMPLE_IDX}"
         echo "  Results saved to: ${OUTPUT_DIR}/"
     else
-        echo "✗ Failed: Sample ${SAMPLE_IDX}"
+        echo "✗ Failed: ${MODEL} on sample ${SAMPLE_IDX}"
     fi
     
     echo ""
@@ -83,14 +85,18 @@ echo "Results are organized in: /root/ICAT/results/blackbox_attack/${EXP_NAME}/"
 echo ""
 echo "Example structure:"
 echo "  results/blackbox_attack/${EXP_NAME}/"
-echo "    ├── sample_0/"
-echo "    │   ├── blackbox_results_internvl2_uit_viic_0.json"
-echo "    │   ├── attack_summary.txt"
-echo "    │   ├── blackbox_attack_analysis.png"
-echo "    │   └── blackbox_elites/"
-echo "    ├── sample_1/"
-echo "    ├── sample_2/"
-echo "    └── ..."
+echo "    ├── internvl2/"
+echo "    │   └── sample_0/"
+echo "    │       ├── blackbox_results_internvl2_uit_viic_0.json"
+echo "    │       ├── attack_summary.txt"
+echo "    │       ├── blackbox_attack_analysis.png"
+echo "    │       └── blackbox_elites/"
+echo "    └── qwen2vl/"
+echo "        └── sample_0/"
+echo "            ├── blackbox_results_qwen2vl_uit_viic_0.json"
+echo "            ├── attack_summary.txt"
+echo "            ├── blackbox_attack_analysis.png"
+echo "            └── blackbox_elites/"
 echo ""
 echo "Checking result files..."
 find results/blackbox_attack/${EXP_NAME} -type f -name "*.png" -o -name "*.txt" -o -name "*.json" 2>/dev/null | head -20
