@@ -708,30 +708,33 @@ def main():
     )
     
     # Create diverse emitters for evolutionary search
-    # CMA-ES: Standard Covariance Matrix Adaptation Evolution Strategy
-    # LM-MA-ES: Limited Memory Matrix Adaptation Evolution Strategy
-    # Sep-CMA-ES: Separable CMA-ES (diagonal covariance)
+    # CMA-ES: Standard CMA with objective ranking
+    # CMA-ME: CMA with objective ranking (same as CMA-ES but different initialization)
+    # CMA-MAE: CMA with improvement-based ranking
     emitters = [
         ribs.emitters.EvolutionStrategyEmitter(
             archive,
             x0=np.zeros(solution_dim),
             sigma0=args.sigma0,
             batch_size=args.batch_size,
-            es="cma_es"  # CMA-ES
+            ranker='obj',  # Rank by objective
+            es="cma_es"
         ),
         ribs.emitters.EvolutionStrategyEmitter(
             archive,
             x0=np.zeros(solution_dim),
             sigma0=args.sigma0,
             batch_size=args.batch_size,
-            es="lm_ma_es"  # LM-MA-ES
+            ranker='obj',  # CMA-ME: objective-based ranking
+            es="cma_es"
         ),
         ribs.emitters.EvolutionStrategyEmitter(
             archive,
             x0=np.zeros(solution_dim),
             sigma0=args.sigma0,
             batch_size=args.batch_size,
-            es="sep_cma_es"  # Separable CMA-ES
+            ranker='imp',  # CMA-MAE: improvement-based ranking
+            es="cma_es"
         )
     ]
     
