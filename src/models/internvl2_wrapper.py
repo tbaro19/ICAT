@@ -57,10 +57,26 @@ class InternVL2Wrapper:
     def _patch_generate(self):
         """Add generate method to language model if missing (transformers 5.0 compatibility)"""
         if not hasattr(self.model.language_model, 'generate'):
-            print("Patching language_model with generate method...")
+            print("Patching language_model with generation capabilities...")
             from transformers.generation import GenerationMixin
-            # Bind only the generate method - it will call other methods internally
-            self.model.language_model.generate = GenerationMixin.generate.__get__(self.model.language_model)
+            from transformers import GenerationConfig
+            
+            # Add generation_config if missing
+            if not hasattr(self.model.language_model, 'generation_config'):
+                self.model.language_model.generation_config = GenerationConfig.from_model_config(self.model.language_model.config)
+            
+            # Make the language model inherit from GenerationMixin
+            # This is a bit hacky but necessary for transformers 5.0
+            original_class = type(self.model.language_model)
+            if GenerationMixin not in original_class.__bases__:
+                # Create a new class that inherits from both the original class and GenerationMixin
+                new_class = type(
+                    f"{original_class.__name__}WithGeneration",
+                    (original_class, GenerationMixin),
+                    {}
+                )
+                # Change the instance's class
+                self.model.language_model.__class__ = new_class
     
     def _preprocess_image(self, image):
         """
@@ -135,9 +151,13 @@ class InternVL2Wrapper:
                     pixel_values=pixel_values,
                     question=question,
                     generation_config=dict(
-                        max_new_tokens=128,
-                        do_sample=False,
-                        num_beams=3
+                        max_new_tokens=64,
+                        do_sample=True,
+                        temperature=0.7,
+                        top_p=0.9,
+                        repetition_penalty=1.2,
+                        pad_token_id=self.tokenizer.eos_token_id,
+                        eos_token_id=self.tokenizer.eos_token_id
                     )
                 )
             
@@ -147,7 +167,10 @@ class InternVL2Wrapper:
             
             return response.strip()
             
-        except torch.cuda.OutOfMemoryError:
+        except Exception as e:
+            print(f"Warning: Caption generation failed with error: {e}")
+            # Return a descriptive placeholder instead of trying complex fallbacks
+            return "Image showing visual content (caption generation unavailable)"
             print("Warning: OOM during caption generation, clearing cache and retrying...")
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()

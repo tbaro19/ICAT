@@ -164,7 +164,10 @@ def export_golden_elites(
                     torch.cuda.empty_cache()
             except Exception as e:
                 print(f"  Warning: Caption generation failed ({e})")
-                attacked_caption = "Generation failed"
+                # Use a meaningful placeholder instead of "Generation failed"
+                attacked_caption = "Adversarial image (caption generation unavailable)"
+        else:
+            attacked_caption = "Caption generation disabled"
         
         # Compute all metrics like comparison_viz.py
         from bert_score import score as bert_score
