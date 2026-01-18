@@ -5,7 +5,7 @@ Efficient small VLM with strong performance
 import torch
 import numpy as np
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForVision2Seq
+from transformers import AutoProcessor, AutoModelForCausalLM
 import sys
 import os
 
@@ -38,7 +38,7 @@ class TinyLLaVAWrapper:
             local_files_only=False
         )
         
-        self.model = AutoModelForVision2Seq.from_pretrained(
+        self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16,
             device_map="auto",
