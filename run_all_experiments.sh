@@ -1,139 +1,96 @@
 #!/bin/bash
-# Batch script to run all model+dataset combinations
-# Quality-Diversity Black-box Attacks on Vision-Language Models
+# Batch script to run black-box jailbreak experiments
+# Query-Efficient Black-Box Visual Jailbreaking on VLMs
 #
 # Usage:
 #   ./run_all_experiments.sh [iterations] [exp_name]
 #
 # Examples:
-#   ./run_all_experiments.sh                    # 1000 iterations, jailbreak_run
-#   ./run_all_experiments.sh 50                 # 50 iterations, jailbreak_run
-#   ./run_all_experiments.sh 500 baseline       # 500 iterations, baseline
-#   ./run_all_experiments.sh 1000 safety_test   # 1000 iterations, safety_test
+#   ./run_all_experiments.sh                    # 1000 iterations, blackbox_run
+#   ./run_all_experiments.sh 500                # 500 iterations, blackbox_run
+#   ./run_all_experiments.sh 1000 baseline      # 1000 iterations, baseline
+#   ./run_all_experiments.sh 2000 safety_test   # 2000 iterations, safety_test
 #
 # Note: Experiments run SEQUENTIALLY (not parallel) - one at a time
 #
 
 # Parse command line arguments
-ITERATIONS=${1:-1}
-EXP_NAME=${2:-"jailbreak_run"}
-
-# All QD algorithms to run
-ALGORITHMS=("cma_me" "cma_mae" "cma_mega")
+ITERATIONS=${1:-1000}
+EXP_NAME=${2:-"blackbox_run"}
 
 echo "========================================"
-echo "🎯 Safety Red-Teaming Jailbreak Framework"
+echo "🎯 Query-Efficient Black-Box Jailbreaking"
 echo "========================================"
 echo "Configuration:"
 echo "  - Iterations: ${ITERATIONS}"
 echo "  - Experiment name: ${EXP_NAME}"
-echo "  - QD Algorithms: cma_me, cma_mae, cma_mega"echo "  - Models: InternVL2-2B, Qwen2-VL-2B-Instruct"echo "  - Mode: Unified Adaptive Framework (Jailbreak)"
-echo "  - Fitness: Harmful Token Lexicon (Always Enabled)"
+echo "  - Attack Type: Pure Black-Box (Text-only feedback)"
+echo "  - Fitness: Hard Reward (+10.0) + Soft Reward (Toxicity)"
+echo "  - Model: InternVL2-2B"
+echo "  - Dataset: UIT-ViIC"
 echo "=========================================="
 
-# Always use unified framework with jailbreak fitness
-UNIFIED_FLAGS="--use_unified"
-
-# Model configurations (optimized for Tesla T4)
-MODEL_INTERNVL="OpenGVLab/InternVL2-2B"
-MODEL_QWEN2VL="Qwen/Qwen2-VL-2B-Instruct"
-
-# Datasets
-DATASETS=("uit-viic")
+# Dataset samples to attack (UIT-ViIC dataset)
+DATASET="uit_viic"
+SAMPLES=(0 1 2 3 4)  # Attack first 5 samples
 
 # Track progress  
-TOTAL_EXPERIMENTS=$((2 * ${#DATASETS[@]} * ${#ALGORITHMS[@]}))
+TOTAL_EXPERIMENTS=${#SAMPLES[@]}
 CURRENT=0
 
 echo "Total experiments to run: ${TOTAL_EXPERIMENTS}"
-echo "Algorithms: ${ALGORITHMS[@]}"
-echo "Models: InternVL2-2B, Qwen2-VL-2B-Instruct"
-echo "Datasets: ${DATASETS[@]}"
+echo "Dataset: ${DATASET}"
+echo "Samples: ${SAMPLES[@]}"
 echo ""
 
-# Loop through all algorithms
-for QD_ALGO in "${ALGORITHMS[@]}"; do
-    echo ""
-    echo "=========================================="
-    echo "Starting Algorithm: ${QD_ALGO}"
-    echo "=========================================="
-# Run InternVL2 experiments
-echo ""
-echo "========== InternVL2-2B Experiments =========="
-for dataset in "${DATASETS[@]}"; do
+# Loop through all samples
+for SAMPLE_IDX in "${SAMPLES[@]}"; do
     CURRENT=$((CURRENT + 1))
     echo ""
-    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running InternVL2 on ${dataset}..."
-    echo "Command: python main.py --model internvl --model_name ${MODEL_INTERNVL} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
+    echo "=========================================="
+    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Black-Box Attack on Sample ${SAMPLE_IDX}"
+    echo "=========================================="
     
-    python main.py \
-        --model internvl \
-        --model_name "${MODEL_INTERNVL}" \
-        --dataset "${dataset}" \
-        --algorithm "${QD_ALGO}" \
+    OUTPUT_DIR="/root/ICAT/results/blackbox_attack/${EXP_NAME}/sample_${SAMPLE_IDX}"
+    
+    echo "Command: python blackbox_jailbreak_main.py --model internvl2 --dataset ${DATASET} --iterations ${ITERATIONS} --batch_size 4 --sample_idx ${SAMPLE_IDX} --output_dir ${OUTPUT_DIR}"
+    
+    python blackbox_jailbreak_main.py \
+        --model internvl2 \
+        --dataset "${DATASET}" \
         --iterations ${ITERATIONS} \
-        --exp_name "${EXP_NAME}" \
-        ${UNIFIED_FLAGS}
+        --batch_size 4 \
+        --sample_idx ${SAMPLE_IDX} \
+        --output_dir "${OUTPUT_DIR}" \
+        --device cuda
     
     if [ $? -eq 0 ]; then
-        echo "✓ Successfully completed InternVL2 on ${dataset}"
-        echo "  Results saved to: results/${QD_ALGO}/internvl_OpenGVLab_InternVL2-2B/${dataset}/${EXP_NAME}/"
+        echo "✓ Successfully completed sample ${SAMPLE_IDX}"
+        echo "  Results saved to: ${OUTPUT_DIR}/"
     else
-        echo "✗ Failed: InternVL2 on ${dataset}"
+        echo "✗ Failed: Sample ${SAMPLE_IDX}"
     fi
-done
-
-# Run Qwen2-VL experiments
-echo ""
-echo "========== Qwen2-VL Experiments =========="
-for dataset in "${DATASETS[@]}"; do
-    CURRENT=$((CURRENT + 1))
+    
     echo ""
-    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running Qwen2-VL on ${dataset}..."
-    echo "Command: python main.py --model qwen2vl --model_name ${MODEL_QWEN2VL} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
-    
-    python main.py \
-        --model qwen2vl \
-        --model_name "${MODEL_QWEN2VL}" \
-        --dataset "${dataset}" \
-        --algorithm "${QD_ALGO}" \
-        --iterations ${ITERATIONS} \
-        --exp_name "${EXP_NAME}" \
-        ${UNIFIED_FLAGS}
-    
-    if [ $? -eq 0 ]; then
-        echo "✓ Successfully completed Qwen2-VL on ${dataset}"
-        echo "  Results saved to: results/${QD_ALGO}/qwen2vl_Qwen_Qwen2-VL-2B-Instruct/${dataset}/${EXP_NAME}/"
-    else
-        echo "✗ Failed: Qwen2-VL on ${dataset}"
-    fi
 done
 
 echo ""
 echo "========================================"
-echo "Completed Algorithm: ${QD_ALGO}"
-echo "=========================================="
-
-done  # End algorithm loop
-
-echo ""
+echo "All black-box experiments complete!"
 echo "========================================"
-echo "All experiments complete!"
-echo "=========================================="
 echo ""
-echo "Results are organized in: /root/ICAT/results/"
-echo "  - Each algorithm has its own folder"
-echo "  - Each model within algorithm folder"
-echo "  - Each dataset within model folder"
-echo "  - Each experiment within dataset folder"
+echo "Results are organized in: /root/ICAT/results/blackbox_attack/${EXP_NAME}/"
 echo ""
 echo "Example structure:"
-echo "  results/"
-echo "    └── ${QD_ALGO}/"
-echo "        ├── internvl_OpenGVLab_InternVL2-2B/"
-echo "        │   └── uit-viic/${EXP_NAME}/"
-echo "        └── qwen2vl_Qwen_Qwen2-VL-2B-Instruct/"
-echo "            └── uit-viic/${EXP_NAME}/"
+echo "  results/blackbox_attack/${EXP_NAME}/"
+echo "    ├── sample_0/"
+echo "    │   ├── blackbox_results_internvl2_uit_viic_0.json"
+echo "    │   ├── attack_summary.txt"
+echo "    │   ├── blackbox_attack_analysis.png"
+echo "    │   └── blackbox_elites/"
+echo "    ├── sample_1/"
+echo "    ├── sample_2/"
+echo "    └── ..."
 echo ""
-echo "Checking result directories..."
-find results/${QD_ALGO} -type f -name "*.png" -o -name "*.txt" -o -name "*.pkl" 2>/dev/null | head -20
+echo "Checking result files..."
+find results/blackbox_attack/${EXP_NAME} -type f -name "*.png" -o -name "*.txt" -o -name "*.json" 2>/dev/null | head -20
