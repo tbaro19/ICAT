@@ -169,13 +169,21 @@ def export_golden_elites(
         # Compute all metrics like comparison_viz.py
         from bert_score import score as bert_score
         
-        # BERTScore
+        # BERTScore - handle model loading issues gracefully
         try:
-            P_att, R_att, F1_att = bert_score([attacked_caption], [original_caption], lang='en', verbose=False, device='cpu')
+            # Try with a more compatible model to avoid architecture mismatches
+            P_att, R_att, F1_att = bert_score(
+                [attacked_caption], [original_caption], 
+                model_type='distilbert-base-uncased',  # Use smaller, more stable model
+                lang='en', 
+                verbose=False, 
+                device='cpu'
+            )
             bert_f1_att = F1_att.item()
             bert_f1_clean = 1.0
             bert_score_diff = bert_f1_clean - bert_f1_att
-        except:
+        except Exception as e:
+            print(f"    Warning: BERTScore computation failed ({e}), using fallback values")
             bert_f1_clean = 1.0
             bert_f1_att = 0.0
             bert_score_diff = 0.0
