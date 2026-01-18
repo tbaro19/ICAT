@@ -497,9 +497,15 @@ def main():
         perturbed_images = torch.clamp(perturbed_images, 0.0, 1.0)
         
         # Generate captions and compute black-box fitness
+        logger.debug(f"Processing {len(perturbed_images)} perturbed images, {len(all_solutions)} solutions")
         fitness_scores, captions, query_counts = generate_adversarial_captions(
             model, perturbed_images, fitness_engine
         )
+        logger.debug(f"Got {len(fitness_scores)} fitness scores, {len(captions)} captions")
+        
+        # Verify batch dimensions match
+        assert len(fitness_scores) == len(all_solutions), \
+            f"Batch size mismatch: {len(fitness_scores)} fitness scores vs {len(all_solutions)} solutions"
         
         # Compute behavioral characteristics
         behavioral_chars = compute_behavioral_characteristics(
@@ -524,7 +530,12 @@ def main():
                 emitter_status = status[emitter_start:emitter_end]
                 
                 # tell() requires: solutions, objective, measures, add_info for pyribs
-                emitter.tell(emitter_solutions, emitter_fitness, emitter_bcs, {"status": emitter_status})
+                # add_info must contain 'status' and 'value' for ranker
+                add_info = {
+                    "status": emitter_status,
+                    "value": emitter_fitness  # For ranking
+                }
+                emitter.tell(emitter_solutions, emitter_fitness, emitter_bcs, add_info)
             
             emitter_start = emitter_end
         
