@@ -8,7 +8,7 @@ import torch
 from tqdm import tqdm
 
 # Import project modules
-from src.models.blip2_wrapper import BLIP2Wrapper
+from src.models.deepseek_vl2_wrapper import DeepSeekVL2Wrapper
 from src.models.internvl2_wrapper import InternVL2Wrapper
 from src.models.qwen2vl_wrapper import Qwen2VLWrapper
 from src.qd_engine import QDArchive, QDScheduler, create_emitters
@@ -32,10 +32,10 @@ def parse_args():
     )
     
     # Model arguments
-    parser.add_argument('--model', type=str, default='blip2', 
-                       choices=['blip2', 'internvl', 'qwen2vl'],
-                       help='VLM model to attack')
-    parser.add_argument('--model_name', type=str, default='Salesforce/blip2-opt-2.7b',
+    parser.add_argument('--model', type=str, default='deepseek', 
+                       choices=['deepseek', 'internvl', 'qwen2vl'],
+                       help='VLM model to use')
+    parser.add_argument('--model_name', type=str, default='deepseek-ai/deepseek-vl2-tiny',
                        help='Specific model architecture (HuggingFace model ID)')
     parser.add_argument('--pretrained', type=str, default=None,
                        help='Pretrained weights (not used for HF models)')
@@ -137,8 +137,8 @@ def main():
     print("Loading Vision-Language Model")
     print("="*50)
     
-    if args.model == 'blip2':
-        vlm_model = BLIP2Wrapper(
+    if args.model == 'deepseek':
+        vlm_model = DeepSeekVL2Wrapper(
             model_name=args.model_name,
             device=device
         )

@@ -36,7 +36,7 @@ echo "=========================================="
 UNIFIED_FLAGS="--use_unified"
 
 # Model configurations (optimized for Tesla T4)
-MODEL_BLIP2="Salesforce/blip2-opt-2.7b"
+MODEL_DEEPSEEK="deepseek-ai/deepseek-vl2-tiny"
 MODEL_INTERNVL="OpenGVLab/InternVL2-2B"
 MODEL_QWEN2VL="Qwen/Qwen2-VL-2B-Instruct"
 
@@ -49,7 +49,7 @@ CURRENT=0
 
 echo "Total experiments to run: ${TOTAL_EXPERIMENTS}"
 echo "Algorithms: ${ALGORITHMS[@]}"
-echo "Models: BLIP-2, InternVL2-2B (Qwen2-VL ready)"
+echo "Models: DeepSeek-VL2-Tiny, InternVL2-2B (Qwen2-VL ready)"
 echo "Datasets: ${DATASETS[@]}"
 echo ""
 
@@ -61,17 +61,17 @@ for QD_ALGO in "${ALGORITHMS[@]}"; do
     echo "=========================================="
     echo ""
 
-# Run BLIP-2 experiments
-echo "========== BLIP-2 Experiments =========="
+# Run DeepSeek-VL2 experiments
+echo "========== DeepSeek-VL2 Experiments =========="
 for dataset in "${DATASETS[@]}"; do
     CURRENT=$((CURRENT + 1))
     echo ""
-    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running BLIP-2 on ${dataset}..."
-    echo "Command: python main.py --model blip2 --model_name ${MODEL_BLIP2} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
+    echo "[${CURRENT}/${TOTAL_EXPERIMENTS}] Running DeepSeek-VL2 on ${dataset}..."
+    echo "Command: python main.py --model deepseek --model_name ${MODEL_DEEPSEEK} --dataset ${dataset} --algorithm ${QD_ALGO} --iterations ${ITERATIONS} --exp_name ${EXP_NAME} ${UNIFIED_FLAGS}"
     
     python main.py \
-        --model blip2 \
-        --model_name "${MODEL_BLIP2}" \
+        --model deepseek \
+        --model_name "${MODEL_DEEPSEEK}" \
         --dataset "${dataset}" \
         --algorithm "${QD_ALGO}" \
         --iterations ${ITERATIONS} \

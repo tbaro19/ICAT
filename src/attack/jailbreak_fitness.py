@@ -142,8 +142,8 @@ class JailbreakLogitFitness:
         # Different extraction methods for different model types
         model_type = vlm_model.__class__.__name__.lower()
         
-        if 'blip2' in model_type:
-            return self._extract_blip2_logits(images, vlm_model)
+        if 'deepseek' in model_type:
+            return self._extract_deepseek_logits(images, vlm_model)
         elif 'internvl' in model_type:
             return self._extract_internvl_logits(images, vlm_model)
         elif 'qwen2vl' in model_type or 'qwen' in model_type:
@@ -151,54 +151,29 @@ class JailbreakLogitFitness:
         else:
             raise NotImplementedError(f"Logit extraction not implemented for {model_type}")
     
-    def _extract_blip2_logits(
+    def _extract_deepseek_logits(
         self,
         images: torch.Tensor,
         vlm_model
     ) -> torch.Tensor:
-        """Extract logits from BLIP-2"""
-        # BLIP-2 uses generate() with output_scores
-        # We need to access the model's forward pass directly
+        """Extract logits from DeepSeek-VL2"""
+        batch_logits = []
         
-        # Prepare inputs
-        pixel_values = images.to(vlm_model.device)
-        
-        # Get the model's language model
         with torch.no_grad():
-            # Encode image
-            vision_outputs = vlm_model.model.vision_model(pixel_values)
-            image_embeds = vision_outputs[0]
-            
-            # Project to text space
-            image_embeds = vlm_model.model.visual_projection(image_embeds)
-            
-            # Get Q-Former outputs
-            image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(vlm_model.device)
-            query_tokens = vlm_model.model.query_tokens.expand(image_embeds.shape[0], -1, -1)
-            
-            query_outputs = vlm_model.model.qformer(
-                query_embeds=query_tokens,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True
-            )
-            
-            # Project to language model space
-            language_model_inputs = vlm_model.model.language_projection(query_outputs.last_hidden_state)
-            
-            # Get logits from language model (first position)
-            # Use a simple prompt to trigger generation
-            input_ids = torch.tensor([[1]], device=vlm_model.device).repeat(images.shape[0], 1)  # BOS token
-            
-            outputs = vlm_model.model.language_model(
-                inputs_embeds=language_model_inputs,
-                return_dict=True
-            )
-            
-            # Extract logits from first generated position
-            logits = outputs.logits[:, -1, :]  # [batch_size, vocab_size]
+            # Process each image individually
+            for i in range(images.shape[0]):
+                img = images[i]  # [C, H, W]
+                
+                # Use wrapper's extract_logits method
+                logits = vlm_model.extract_logits(img)
+                batch_logits.append(logits)
+                
+                # Clear cache
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
         
-        return logits
+        # Stack to [B, vocab_size]
+        return torch.stack(batch_logits)
     
     def _extract_internvl_logits(
         self,
