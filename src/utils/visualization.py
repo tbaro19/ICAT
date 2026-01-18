@@ -41,7 +41,7 @@ def plot_heatmap(archive,
     
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')
         print(f"Heatmap saved to {save_path}")
     
     plt.show()
@@ -79,7 +79,7 @@ def plot_training_curves(history: Dict[str, List],
     
     if save_path:
         os_module.makedirs(os_module.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')
         print(f"Training curves saved to {save_path}")
     
     plt.show()
@@ -147,7 +147,7 @@ def visualize_perturbations(original_image: np.ndarray,
     
     if save_path:
         os_module.makedirs(os_module.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')
         print(f"Perturbation visualization saved to {save_path}")
     
     plt.show()
@@ -185,7 +185,7 @@ def plot_archive_evolution(archives: List,
     
     if save_path:
         os_module.makedirs(os_module.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')
         print(f"Archive evolution saved to {save_path}")
     
     plt.show()
@@ -309,7 +309,7 @@ def plot_adaptive_sigma_history(history: Dict[str, List],
     
     if save_path:
         os_module.makedirs(os_module.path.dirname(save_path), exist_ok=True)
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')
         print(f"Adaptive attack history plot saved to {save_path}")
     
     plt.close()

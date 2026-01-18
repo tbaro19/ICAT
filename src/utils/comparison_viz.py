@@ -171,7 +171,7 @@ def create_attack_comparison(
             transform=ax_pos.transAxes
         )
     
-    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')
     plt.close()
     
     print(f"Attack comparison saved to {save_path}")
@@ -202,10 +202,13 @@ def generate_caption_from_image(vlm_model, image: np.ndarray, language: str = 'e
     
     # Generate caption using the model's generative capabilities
     with torch.no_grad():
-        captions = vlm_model.generate_caption(image_tensor, max_length=max_length)
-    
-    # Return first caption (single image)
-    caption = captions[0] if isinstance(captions, list) else captions
+        # Handle different image input formats
+        if image_tensor.ndim == 4:
+            image_for_caption = image_tensor.squeeze(0)  # Remove batch dimension
+        else:
+            image_for_caption = image_tensor
+        
+        caption = vlm_model.generate_caption(image_for_caption, max_length=max_length)
     
     # Note: For Vietnamese, we can translate the English caption if needed
     if language == 'vi':
