@@ -142,38 +142,12 @@ class JailbreakLogitFitness:
         # Different extraction methods for different model types
         model_type = vlm_model.__class__.__name__.lower()
         
-        if 'deepseek' in model_type:
-            return self._extract_deepseek_logits(images, vlm_model)
-        elif 'internvl' in model_type:
+        if 'internvl' in model_type:
             return self._extract_internvl_logits(images, vlm_model)
         elif 'qwen2vl' in model_type or 'qwen' in model_type:
             return self._extract_qwen2vl_logits(images, vlm_model)
         else:
             raise NotImplementedError(f"Logit extraction not implemented for {model_type}")
-    
-    def _extract_deepseek_logits(
-        self,
-        images: torch.Tensor,
-        vlm_model
-    ) -> torch.Tensor:
-        """Extract logits from DeepSeek-VL2"""
-        batch_logits = []
-        
-        with torch.no_grad():
-            # Process each image individually
-            for i in range(images.shape[0]):
-                img = images[i]  # [C, H, W]
-                
-                # Use wrapper's extract_logits method
-                logits = vlm_model.extract_logits(img)
-                batch_logits.append(logits)
-                
-                # Clear cache
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-        
-        # Stack to [B, vocab_size]
-        return torch.stack(batch_logits)
     
     def _extract_internvl_logits(
         self,

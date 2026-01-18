@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from PIL import Image
 from transformers import AutoModel, AutoTokenizer
+from torchvision import transforms
 
 
 class InternVL2Wrapper:
@@ -22,6 +23,13 @@ class InternVL2Wrapper:
         super().__init__()
         self.device = device
         self.model_name = model_name
+        self.image_size = 448
+        
+        # Image preprocessing
+        self.normalize = transforms.Normalize(
+            mean=(0.485, 0.456, 0.406),
+            std=(0.229, 0.224, 0.225)
+        )
         
         print(f"Loading InternVL2-2B model: {model_name}")
         
@@ -41,7 +49,53 @@ class InternVL2Wrapper:
         
         self.model.eval()
         
+        # Patch language model to add generate method if missing (transformers 5.0 fix)
+        self._patch_generate()
+        
         print(f"✓ InternVL2-2B loaded on {device}")
+    
+    def _patch_generate(self):
+        """Add generate method to language model if missing (transformers 5.0 compatibility)"""
+        if not hasattr(self.model.language_model, 'generate'):
+            print("Patching language_model with generate method...")
+            from transformers.generation import GenerationMixin
+            # Bind only the generate method - it will call other methods internally
+            self.model.language_model.generate = GenerationMixin.generate.__get__(self.model.language_model)
+    
+    def _preprocess_image(self, image):
+        """
+        Preprocess PIL Image to pixel_values tensor
+        
+        Args:
+            image: PIL Image
+            
+        Returns:
+            torch.Tensor: Preprocessed pixel values [num_patches, 3, H, W]
+        """
+        from PIL import Image as PILImage
+        
+        # Ensure it's a PIL Image
+        if not isinstance(image, PILImage.Image):
+            raise ValueError("Image must be PIL Image")
+        
+        # Convert to RGB
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Resize image
+        image = image.resize((self.image_size, self.image_size), PILImage.Resampling.BICUBIC)
+        
+        # Convert to tensor and normalize
+        image_array = np.array(image).astype(np.float32) / 255.0
+        image_tensor = torch.from_numpy(image_array).permute(2, 0, 1)  # [3, H, W]
+        
+        # Normalize
+        image_tensor = self.normalize(image_tensor)
+        
+        # InternVL2 expects [num_patches, 3, H, W] where num_patches=1 for single image
+        pixel_values = image_tensor.unsqueeze(0)  # [1, 3, H, W]
+        
+        return pixel_values.to(torch.bfloat16)
     
     def generate_caption(self, image, max_length: int = 100):
         """
@@ -68,16 +122,18 @@ class InternVL2Wrapper:
             image = PILImage.fromarray(img_np)
         
         try:
-            # InternVL2 uses simple prompt format
-            prompt = "<image>\nDescribe this image in detail."
+            # Preprocess image to pixel_values
+            pixel_values = self._preprocess_image(image).to(self.device)
+            
+            # InternVL2 uses simple question format
+            question = "<image>\nDescribe this image in detail."
             
             # Generate caption
             with torch.no_grad():
                 response = self.model.chat(
                     self.tokenizer,
-                    pixel_values=None,
-                    image=image,
-                    msgs=[{'role': 'user', 'content': prompt}],
+                    pixel_values=pixel_values,
+                    question=question,
                     generation_config=dict(
                         max_new_tokens=128,
                         do_sample=False,
