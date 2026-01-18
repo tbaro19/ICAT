@@ -112,7 +112,10 @@ class Qwen2VLWrapper:
                     **inputs,
                     max_new_tokens=128,
                     do_sample=False,
-                    repetition_penalty=1.2
+                    repetition_penalty=1.2,
+                    temperature=None,  # Disable temperature for greedy
+                    top_p=None,        # Disable top_p for greedy
+                    top_k=None         # Disable top_k for greedy
                 )
             
             # Trim generated ids to only new tokens
