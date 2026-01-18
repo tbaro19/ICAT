@@ -31,21 +31,25 @@ class TinyLLaVAWrapper:
         
         print(f"Loading TinyLLaVA model: {model_name}")
         
-        # Load processor and model
+        # Load processor
         self.processor = AutoProcessor.from_pretrained(
             model_name,
             trust_remote_code=True,
             local_files_only=False
         )
         
+        # Load model with SDPA disabled for compatibility
+        from transformers import AutoConfig
+        config = AutoConfig.from_pretrained(model_name, trust_remote_code=True)
+        config._attn_implementation = "eager"
+        
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
+            config=config,
             torch_dtype=torch.float16,
-            device_map="auto",
             trust_remote_code=True,
-            local_files_only=False,
-            attn_implementation="eager"  # Avoid SDPA compatibility issues
-        ).eval()
+            local_files_only=False
+        ).eval().to(device)
         
         # Initialize harmful lexicon
         try:
