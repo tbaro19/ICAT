@@ -16,7 +16,7 @@ from src.qd_engine.adaptive_attack_scheduler import AdaptiveAttackScheduler
 from src.qd_engine.visual_stealth_archive import VisualStealthArchive
 from src.qd_engine.discovery_tracker import DiscoveryRateTracker
 from src.qd_engine.unified_attack_manager import UnifiedAttackManager
-from src.attack import PerturbationGenerator, FitnessFunction, MeasureFunction, JailbreakLogitFitness
+from src.attack import PerturbationGenerator, MeasureFunction, JailbreakLogitFitness
 from src.utils import plot_heatmap, plot_training_curves, visualize_perturbations
 from src.utils import DatasetLoader
 from src.utils import export_golden_elites
@@ -95,10 +95,6 @@ def parse_args():
     # Unified framework arguments
     parser.add_argument('--use_unified', action='store_true',
                        help='Use Unified Adaptive Adversarial Framework')
-    parser.add_argument('--use_logit_loss', action='store_true',
-                       help='Use logit-based fitness (cross-entropy loss) instead of similarity')
-    parser.add_argument('--use_jailbreak', action='store_true',
-                       help='🎯 Enable Jailbreak Mode: Use harmful token lexicon for safety red-teaming')
     parser.add_argument('--initial_epsilon', type=float, default=0.07,
                        help='Initial epsilon for adaptive scheduler')
     
@@ -376,28 +372,21 @@ def main():
         target_size=target_size  # Upsample to this size before applying
     )
     
-    # Initialize fitness function based on mode
-    if args.use_jailbreak:
-        print("\n🎯 JAILBREAK MODE ENABLED - Safety Red-Teaming")
-        print("="*70)
-        print("Fitness: Harmful Token Lexicon (Targeted Logit-Forcing)")
-        print("Objective: Maximize log-probability of prohibited tokens")
-        print("="*70)
-        
-        fitness_fn = JailbreakLogitFitness(
-            model_name=model_name,
-            device=device,
-            chunk_size=1,  # VLMs are memory-intensive
-            verbose=True
-        )
-        fitness_fn.lexicon.print_lexicon_summary()
-    else:
-        # Standard fitness function
-        fitness_fn = FitnessFunction(
-            metric='clip_similarity',
-            device=device,
-            chunk_size=4  # Process 4 images at a time
-        )
+    # Initialize jailbreak fitness function
+    print("\n🎯 SAFETY RED-TEAMING MODE - Jailbreak Research")
+    print("="*70)
+    print("Fitness: Harmful Token Lexicon (Targeted Logit-Forcing)")
+    print("Objective: Maximize log-probability of prohibited tokens")
+    print("BC1: L∞ Stealthiness [0.05, 0.10] | BC2: Spectral [0.10, 0.18]")
+    print("="*70)
+    
+    fitness_fn = JailbreakLogitFitness(
+        model_name=model_name,
+        device=device,
+        chunk_size=1,  # VLMs are memory-intensive
+        verbose=True
+    )
+    fitness_fn.lexicon.print_lexicon_summary()
     
     # Initialize measure function
     measure_fn = MeasureFunction(
@@ -785,8 +774,8 @@ def main():
     for key, value in final_stats.items():
         print(f"  {key}: {value}")
     
-    # Jailbreak-specific metrics
-    if args.use_jailbreak and hasattr(fitness_fn, 'compute_jsr'):
+    # Jailbreak safety red-teaming metrics
+    if hasattr(fitness_fn, 'compute_jsr'):
         print("\n" + "="*70)
         print("🎯 JAILBREAK SAFETY RED-TEAMING METRICS")
         print("="*70)
