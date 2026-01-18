@@ -814,7 +814,7 @@ def main():
         if final_golden_elites:
             avg_infiltration = np.mean([e['bc1_linf'] for e in final_golden_elites])
             print(f"✅ Infiltration Depth (Top-5 Golden Elites): {avg_infiltration:.4f}")
-            print(f"   Golden Elite BC1 values: {[f'{e[\"bc1_linf\"]:.4f}' for e in final_golden_elites]}")
+            print(f"   Golden Elite BC1 values: {[f'{e['bc1_linf']:.4f}' for e in final_golden_elites]}")
         else:
             print(f"⚠️  Infiltration Depth: No successful golden elites found")
         
@@ -822,13 +822,6 @@ def main():
         print(f"✅ Models Used: Only InternVL2-2B + Qwen2-VL-2B-Instruct (as requested)")
         
     print("="*70)
-            print(f"\n   🏆 Best Infiltration: L-inf = {infiltration_elites[0]['bc1_linf']:.4f}")
-        else:
-            print("\n⚠️  No successful jailbreaks found in archive")
-        
-        # Print fitness summary
-        fitness_fn.print_summary()
-        print("="*70)
     
     # Print Visual Stealth Archive statistics
     print("\n" + archive.get_replacement_summary())
