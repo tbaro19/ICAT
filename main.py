@@ -480,7 +480,6 @@ def main():
             groundtruth_caption=groundtruth_caption,
             bc_ranges=bc_ranges,
             grid_dims=tuple(args.grid_dims),
-            use_logit_loss=args.use_logit_loss,
             initial_epsilon=args.initial_epsilon,
             device=device,
             chunk_size=args.batch_size,

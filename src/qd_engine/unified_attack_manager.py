@@ -11,7 +11,7 @@ from tqdm import tqdm
 from .adaptive_scheduler import AdaptiveScheduler
 from .visual_stealth_archive import VisualStealthArchive
 from .discovery_tracker import DiscoveryRateTracker
-from ..attack.logit_fitness import UnifiedLogitFitness
+from ..attack.jailbreak_fitness import JailbreakLogitFitness
 from ..utils.golden_elites import export_golden_elites
 
 
@@ -39,7 +39,6 @@ class UnifiedAttackManager:
         groundtruth_caption: str,
         bc_ranges: List[tuple],
         grid_dims: tuple,
-        use_logit_loss: bool = True,
         initial_epsilon: float = 0.05,
         device: str = 'cuda',
         chunk_size: int = 4,
@@ -59,7 +58,6 @@ class UnifiedAttackManager:
             groundtruth_caption: Ground-truth caption
             bc_ranges: BC dimension ranges for adaptive scheduler
             grid_dims: Grid dimensions (height, width)
-            use_logit_loss: Use logit-based fitness (True) or similarity (False)
             initial_epsilon: Starting epsilon for adaptive scheduler
             device: Computation device
             chunk_size: Batch size for processing
@@ -76,13 +74,14 @@ class UnifiedAttackManager:
         self.chunk_size = chunk_size
         self.verbose = verbose
         
-        # Initialize unified fitness function
-        # Use smaller chunk size for logit-loss to avoid OOM
-        fitness_chunk_size = 1 if use_logit_loss else chunk_size
-        self.fitness_fn = UnifiedLogitFitness(
-            use_logit_loss=use_logit_loss,
+        # Initialize jailbreak fitness function
+        # Use smaller chunk size for VLMs to avoid OOM
+        fitness_chunk_size = 1
+        self.fitness_fn = JailbreakLogitFitness(
+            model_name=vlm_model.model_name,
             device=device,
-            chunk_size=fitness_chunk_size
+            chunk_size=fitness_chunk_size,
+            verbose=verbose
         )
         
         # Wrap base scheduler with adaptive scheduler
