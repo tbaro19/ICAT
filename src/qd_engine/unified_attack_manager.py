@@ -35,7 +35,6 @@ class UnifiedAttackManager:
         pert_gen,
         measure_fn,
         target_image: np.ndarray,
-        original_caption: str,
         groundtruth_caption: str,
         bc_ranges: List[tuple],
         grid_dims: tuple,
@@ -54,8 +53,7 @@ class UnifiedAttackManager:
             pert_gen: Perturbation generator
             measure_fn: Behavior measure function
             target_image: Clean image to attack [C, H, W]
-            original_caption: Original generated caption
-            groundtruth_caption: Ground-truth caption
+            groundtruth_caption: Ground-truth caption from dataset
             bc_ranges: BC dimension ranges for adaptive scheduler
             grid_dims: Grid dimensions (height, width)
             initial_epsilon: Starting epsilon for adaptive scheduler
@@ -68,7 +66,6 @@ class UnifiedAttackManager:
         self.pert_gen = pert_gen
         self.measure_fn = measure_fn
         self.target_image = target_image
-        self.original_caption = original_caption
         self.groundtruth_caption = groundtruth_caption
         self.device = device
         self.chunk_size = chunk_size
@@ -150,12 +147,10 @@ class UnifiedAttackManager:
                 self.target_image, perturbations
             )
             
-            # Compute fitness (logit-loss or similarity)
+            # Compute fitness (jailbreak logit-forcing)
             objectives = self.fitness_fn.compute_fitness(
-                original_captions=[self.original_caption] * len(perturbed_images),
                 perturbed_images=perturbed_images,
-                vlm_model=self.vlm_model,
-                original_embeddings=self.original_text_emb
+                vlm_model=self.vlm_model
             )
             
             # Compute behavior characteristics
@@ -353,7 +348,7 @@ class UnifiedAttackManager:
             target_image=self.target_image,
             pert_gen=self.pert_gen,
             vlm_model=self.vlm_model,
-            original_caption=self.original_caption,
+            original_caption=self.groundtruth_caption,
             groundtruth_caption=self.groundtruth_caption,
             save_dir=str(output_dir),
             num_elites=top_k,

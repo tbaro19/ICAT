@@ -144,8 +144,8 @@ class JailbreakLogitFitness:
         
         if 'blip2' in model_type:
             return self._extract_blip2_logits(images, vlm_model)
-        elif 'paligemma' in model_type:
-            return self._extract_paligemma_logits(images, vlm_model)
+        elif 'deepseek' in model_type:
+            return self._extract_deepseek_logits(images, vlm_model)
         elif 'qwen2vl' in model_type or 'qwen' in model_type:
             return self._extract_qwen2vl_logits(images, vlm_model)
         else:
@@ -200,30 +200,53 @@ class JailbreakLogitFitness:
         
         return logits
     
-    def _extract_paligemma_logits(
+    def _extract_deepseek_logits(
         self,
         images: torch.Tensor,
         vlm_model
     ) -> torch.Tensor:
-        """Extract logits from PaliGemma"""
-        with torch.no_grad():
-            # PaliGemma forward pass
-            pixel_values = images.to(vlm_model.device)
-            
-            # Prepare minimal input (empty text prompt)
-            input_ids = torch.tensor([[vlm_model.processor.tokenizer.bos_token_id]], 
-                                    device=vlm_model.device).repeat(images.shape[0], 1)
-            
-            outputs = vlm_model.model(
-                input_ids=input_ids,
-                pixel_values=pixel_values,
-                return_dict=True
-            )
-            
-            # Get logits from last position
-            logits = outputs.logits[:, -1, :]  # [batch_size, vocab_size]
+        """Extract logits from DeepSeek-VL2"""
+        from PIL import Image as PILImage
         
-        return logits
+        batch_logits = []
+        
+        with torch.no_grad():
+            # Process each image individually (DeepSeek uses conversational format)
+            for i in range(images.shape[0]):
+                img = images[i]  # [C, H, W]
+                
+                # Convert to PIL
+                if img.shape[0] == 3:
+                    img = img.permute(1, 2, 0)  # [H, W, C]
+                img_np = (img.cpu().numpy() * 255).astype(np.uint8)
+                pil_img = PILImage.fromarray(img_np)
+                
+                # Build conversation
+                conversation = [
+                    {
+                        "role": "User",
+                        "content": "<image>\nDescribe this image.",
+                        "images": [pil_img],
+                    },
+                    {"role": "Assistant", "content": ""},
+                ]
+                
+                # Prepare inputs
+                inputs = vlm_model.processor(
+                    conversation,
+                    images=[pil_img],
+                    return_tensors="pt"
+                ).to(vlm_model.device)
+                
+                # Forward pass
+                outputs = vlm_model.model(**inputs)
+                
+                # Get logits from last position
+                logits = outputs.logits[0, -1, :]  # [vocab_size]
+                batch_logits.append(logits)
+        
+        # Stack batch
+        return torch.stack(batch_logits)  # [batch_size, vocab_size]
     
     def _extract_qwen2vl_logits(
         self,
