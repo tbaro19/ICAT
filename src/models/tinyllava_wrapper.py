@@ -43,7 +43,8 @@ class TinyLLaVAWrapper:
             torch_dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True,
-            local_files_only=False
+            local_files_only=False,
+            attn_implementation="eager"  # Avoid SDPA compatibility issues
         ).eval()
         
         # Initialize harmful lexicon
