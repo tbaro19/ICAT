@@ -303,7 +303,7 @@ def compute_jsr_and_stealth_metrics(archive, config):
         stealth_index = 0.0
     
     # Query Efficiency: Average BC2 (higher = more efficient)
-    query_efficiency = np.mean([elite.measures[1] for elite in elites]) if elites else 0.0
+    query_efficiency = np.mean([elite['measures'][1] for elite in elites]) if elites else 0.0
     
     return {
         'jsr': jsr,
@@ -351,11 +351,11 @@ def save_blackbox_results(archive, fitness_engine, config, output_dir, args):
     success_threshold = config['hard_reward_bonus'] * 0.5
     
     for idx, elite in enumerate(archive):
-        if elite.objective is not None and elite.objective > success_threshold:
+        if elite['objective'] is not None and elite['objective'] > success_threshold:
             try:
                 # Reconstruct perturbation
                 pert_shape = (3, config['perturbation_size'], config['perturbation_size'])
-                perturbation = elite.solution[:np.prod(pert_shape)].reshape(pert_shape)
+                perturbation = elite['solution'][:np.prod(pert_shape)].reshape(pert_shape)
                 
                 # Apply L-inf constraint
                 l_inf_max = config['l_inf_constraint'][1]
@@ -366,7 +366,7 @@ def save_blackbox_results(archive, fitness_engine, config, output_dir, args):
                 img_array = img_array.transpose(1, 2, 0)  # CHW to HWC
                 
                 # Save as PNG
-                filename = f"blackbox_elite_{idx:04d}_fitness_{elite.objective:.4f}_bc1_{elite.measures[0]:.3f}_bc2_{elite.measures[1]:.3f}.png"
+                filename = f"blackbox_elite_{idx:04d}_fitness_{elite['objective']:.4f}_bc1_{elite['measures'][0]:.3f}_bc2_{elite['measures'][1]:.3f}.png"
                 filepath = os.path.join(elite_dir, filename)
                 
                 Image.fromarray(img_array).save(filepath, "PNG", compress_level=0)
