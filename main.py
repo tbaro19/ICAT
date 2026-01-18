@@ -104,6 +104,10 @@ def main():
     """Main execution function"""
     args = parse_args()
     
+    # Set correct model_name if using default
+    if args.model_name == 'OpenGVLab/InternVL2-2B' and args.model == 'qwen2vl':
+        args.model_name = 'Qwen/Qwen2-VL-2B-Instruct'
+    
     # Set device
     device = torch.device(args.device if torch.cuda.is_available() else 'cpu')
     print(f"Using device: {device}")
