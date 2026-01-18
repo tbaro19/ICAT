@@ -248,7 +248,9 @@ def generate_adversarial_captions(model, perturbed_images, fitness_engine):
             img_pil = Image.fromarray(img_array)
             
             # Generate caption (this is our "black-box" query)
+            logger.info(f"Generating caption for image {i+1}/{batch_size}...")
             caption = model.generate_caption(img_pil)
+            logger.info(f"Caption {i+1}: {caption[:100]}...")
             captions.append(caption)
             query_counts.append(1)
             
