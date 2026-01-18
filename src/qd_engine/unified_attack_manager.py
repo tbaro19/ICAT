@@ -114,7 +114,7 @@ class UnifiedAttackManager:
             print("\n" + "="*60)
             print("🎯 Unified Attack Manager Initialized")
             print("="*60)
-            print(f"Fitness Mode: {'Logit-Loss' if use_logit_loss else 'Similarity-Based'}")
+            print(f"Fitness Mode: Jailbreak (Harmful Token Lexicon)")
             print(f"Grid Size: {grid_dims[0]}×{grid_dims[1]}")
             print(f"BC Ranges: {bc_ranges}")
             print(f"Base Sigma: {self.scheduler.base_sigma:.4f}")
