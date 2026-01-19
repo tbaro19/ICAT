@@ -1,4 +1,4 @@
-# Adaptive Black-box Visual Jailbreaking with Stagnation Recovery
+# Diversity-Driven Visual Jailbreaking: A Quality-Diversity Approach with Stagnation Recovery.
 
 **An adaptive, query-efficient black-box framework for evaluating Vision-Language Model safety through evolutionary optimization with stagnation recovery mechanisms and hybrid attack vectors.**
 
