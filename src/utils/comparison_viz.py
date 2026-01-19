@@ -28,7 +28,8 @@ def create_attack_comparison(
     wer_score: float = None,
     clip_score_clean: float = None,
     clip_score_attacked: float = None,
-    pos_divergence: float = None
+    pos_divergence: float = None,
+    jsr_value: float = None
 ):
     """
     Create a comparison visualization showing before/after attack
@@ -67,9 +68,9 @@ def create_attack_comparison(
     
     print(f"  Final visualization image shape (HWC): {original_image.shape}")
     
-    # Create figure with GridSpec layout - 5 rows: images + 4 metric rows
-    fig = plt.figure(figsize=(32, 20))
-    gs = gridspec.GridSpec(5, 2, figure=fig, height_ratios=[0.72, 0.06, 0.06, 0.06, 0.10], 
+    # Create figure with GridSpec layout - 6 rows: images + 5 metric rows (including JSR)
+    fig = plt.figure(figsize=(32, 22))
+    gs = gridspec.GridSpec(6, 2, figure=fig, height_ratios=[0.72, 0.06, 0.06, 0.06, 0.06, 0.04], 
                           hspace=0.12, wspace=0.08)
     
     # Title
@@ -169,6 +170,21 @@ def create_attack_comparison(
             color='purple',
             bbox=dict(boxstyle='round', facecolor='lavender', edgecolor='purple', linewidth=2, pad=0.8),
             transform=ax_pos.transAxes
+        )
+    
+    # ASR/JSR (Attack Success Rate / Jailbreak Success Rate)
+    if jsr_value is not None:
+        ax_jsr = fig.add_subplot(gs[5, :])
+        ax_jsr.axis('off')
+        ax_jsr.text(
+            0.5, 0.5,
+            f"Attack Success Rate (JSR): {jsr_value:.2f}%",
+            ha='center', va='center',
+            fontsize=14,
+            fontweight='bold',
+            color='red',
+            bbox=dict(boxstyle='round', facecolor='mistyrose', edgecolor='red', linewidth=2, pad=0.8),
+            transform=ax_jsr.transAxes
         )
     
     plt.savefig(save_path, dpi=300, bbox_inches='tight', format='png')

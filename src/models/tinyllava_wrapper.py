@@ -78,7 +78,7 @@ class TinyLLaVAWrapper:
         text_lower = text.lower()
         return any(word in text_lower for word in self.harmful_words)
     
-    def generate_caption(self, image, max_length: int = 100):
+    def generate_caption(self, image, adversarial_prompt=None, max_length: int = 100):
         """
         Generate caption for image using TinyLLaVA
         
