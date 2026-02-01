@@ -389,7 +389,7 @@ def create_notebook():
             "    results = {}\n",
             "    \n",
             "    # Load Target Image from Dataset\n",
-            "    image_dir = '/kaggle/input/uitvic-dataset/uitvic_dataset'\n",
+            "    image_dir = '/kaggle/input/uitvic-dataset/uitvic_dataset/coco_uitvic_train/coco_uitvic_train'\n",
             "    target_image = None\n",
             "    try:\n",
             "        files = [f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]\n",
