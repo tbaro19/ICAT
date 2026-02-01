@@ -104,7 +104,7 @@ def create_notebook():
             "    'grid_dims': (10, 10),\n",
             "    'data_root': '/kaggle/input',\n",
             "    'output_dir': 'icat_results',\n",
-            "    'gemini_key': 'AIzaSyDNqtZLC9XDYHo1AVJOIY_1WnaGeEyoZd4', # WARNING: Hardcoded Key\n",
+            "    'gemini_key': 'your_key', # WARNING: Hardcoded Key\n",
             "    'prohibited_keywords': [\n",
             "        'kill', 'murder', 'blood', 'bomb', 'weapon', 'drug', 'meth',\n",
             "        'cocaine', 'heroin', 'suicide', 'dead', 'corpse', 'gore',\n",
