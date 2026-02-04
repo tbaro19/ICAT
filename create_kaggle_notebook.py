@@ -186,7 +186,7 @@ def create_notebook():
             "                    model_name, quantization_config=bnb_config, device_map=self.device, trust_remote_code=True\n",
             "                )\n",
             "                self.processor = LlavaProcessor.from_pretrained(model_name, trust_remote_code=True)\n",
-            "            elif 'InternVL' in model_name:\n",
+            "            elif 'InternVL' in model_name or 'tinyllava' in model_name:\n",
             "                self.model = AutoModel.from_pretrained(\n",
             "                    model_name, quantization_config=bnb_config, device_map=self.device, trust_remote_code=True\n",
             "                )\n",
