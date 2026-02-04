@@ -125,14 +125,14 @@ def create_notebook():
             "if CONFIG['gemini_key']:\n",
             "    try:\n",
             "        genai.configure(api_key=CONFIG['gemini_key'])\n",
-            "        print('✓ Gemini API configured')\n",
+            "        print('[OK] Gemini API configured')\n",
             "    except Exception as e:\n",
             "        print(f'⚠️ Gemini Config Failed: {e}')\n",
             "else:\n",
             "    print('⚠️ GOOGLE_API_KEY missing. Remote attacker disabled.')\n",
             "\n",
             "os.makedirs(CONFIG['output_dir'], exist_ok=True)\n",
-            "print('✓ Config ready')"
+            "print('[OK] Config ready')"
         ]
     })
 
@@ -557,7 +557,7 @@ def create_notebook():
     with open('ICAT_main.ipynb', 'w', encoding='utf-8') as f:
         json.dump(notebook, f, indent=2)
     
-    print("✓ Notebook created: ICAT_main.ipynb")
+    print("[OK] Notebook created: ICAT_main.ipynb")
 
 if __name__ == "__main__":
     create_notebook()
