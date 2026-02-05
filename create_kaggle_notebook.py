@@ -729,7 +729,6 @@ def create_notebook():
             "\n",
             "\n",
             "# Run\n",
-            "# Run\n",
             "# Select which victim to run (Comment out others)\n",
             "SELECTED_VICTIMS = [\n",
             "    'Qwen/Qwen2-VL-2B-Instruct',\n",
