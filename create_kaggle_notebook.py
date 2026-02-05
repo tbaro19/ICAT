@@ -90,7 +90,6 @@ def create_notebook():
             "CONFIG = {\n",
             "    'victims': [\n",
             "        'Qwen/Qwen2-VL-2B-Instruct',\n",
-            "        'OpenGVLab/InternVL2-2B',\n",
             "        'llava-hf/llava-1.5-7b-hf',\n",
             "        'tinyllava/tinyllava-gemma-siglip-2.4b'\n",
             "    ],\n",
